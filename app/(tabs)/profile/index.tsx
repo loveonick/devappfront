@@ -45,7 +45,7 @@ const ProfileScreen = () => {
         <TouchableOpacity className="bg-rose-400 px-4 py-2 rounded-md">
           <Text className="text-white font-semibold">Editar perfil</Text>
         </TouchableOpacity>
-        <TouchableOpacity className="bg-rose-400 px-4 py-2 rounded-md">
+        <TouchableOpacity className="bg- px-4 py-2 rounded-md">
           <Text className="text-white font-semibold">Cerrar Sesion</Text>
         </TouchableOpacity>
       </View>
@@ -77,7 +77,7 @@ const ProfileScreen = () => {
               {recipe.tags.map((tag, index) => (
                 <Text
                   key={index}
-                  className="text-white bg-rose-700 px-2 py-0.5 rounded-full text-xs mr-2 mt-1"
+                  className="text-white bg-colorboton px-2 py-0.5 rounded-full text-xs mr-2 mt-1"
                 >
                   {tag}
                 </Text>
