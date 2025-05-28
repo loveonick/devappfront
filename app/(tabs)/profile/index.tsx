@@ -1,26 +1,27 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const recipes = [
   {
     id: 1,
     title: 'Lorem ipsum',
     description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit...',
-    image: 'https://via.placeholder.com/100',
+    image: require('../../../assets/descarga_3.jpg'),
     tags: ['Mexicana', 'Saludable'],
   },
   {
     id: 2,
     title: 'Lorem ipsum',
     description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit...',
-    image: 'https://via.placeholder.com/100',
+    image: require('../../../assets/descarga_3.jpg'),
     tags: ['Mexicana', 'Saludable'],
   },
   {
     id: 3,
     title: 'Lorem ipsum',
     description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit...',
-    image: 'https://via.placeholder.com/100',
+    image: require('../../../assets/descarga_3.jpg'),
     tags: ['Mexicana', 'Saludable'],
   },
 ];
@@ -31,28 +32,29 @@ const ProfileScreen = () => {
       {/* Perfil */}
       <View className="flex-row items-center mb-6">
         <Image
-          source={{ uri: 'https://via.placeholder.com/80' }}
+          source={require('../../../assets/profileExample.jpg')}
           className="w-20 h-20 rounded-full mr-4"
+          resizeMode="cover"
         />
-        <View>
+        <View className="flex-1">
           <Text className="text-xl font-bold">Brad_Pitt</Text>
           <Text className="text-gray-500">brad@gmail.com</Text>
         </View>
       </View>
 
       {/* Botones de perfil */}
-      <View className="flex-row justify-between mb-4">
-        <TouchableOpacity className="bg-rose-400 px-4 py-2 rounded-md">
+      <View className="flex-row justify-between flex-wrap gap-y-2 mb-4">
+        <TouchableOpacity className="bg-colorboton px-4 py-2 rounded-md">
           <Text className="text-white font-semibold">Editar perfil</Text>
         </TouchableOpacity>
-        <TouchableOpacity className="bg- px-4 py-2 rounded-md">
-          <Text className="text-white font-semibold">Cerrar Sesion</Text>
+        <TouchableOpacity className="bg-colorboton px-4 py-2 rounded-md">
+          <Text className="text-white font-semibold">Cerrar Sesión</Text>
         </TouchableOpacity>
       </View>
 
       {/* Botones de filtro */}
-      <View className="flex-row mb-4">
-        <TouchableOpacity className="bg-gray-200 px-3 py-1 rounded-full mr-2">
+      <View className="flex-row flex-wrap mb-4 gap-2">
+        <TouchableOpacity className="bg-gray-200 px-3 py-1 rounded-full">
           <Text className="text-black font-medium">Mis Recetas</Text>
         </TouchableOpacity>
         <TouchableOpacity className="bg-gray-200 px-3 py-1 rounded-full">
@@ -61,23 +63,26 @@ const ProfileScreen = () => {
       </View>
 
       {/* Lista de recetas */}
-      {recipes.map((recipe) => (
-        <View
-          key={recipe.id}
-          className="flex-row bg-rose-50 p-3 rounded-lg mb-4 items-center"
-        >
+      {recipes.map((recipe, i) => (
+        <View key={i} className="flex-row mb-4 bg-white rounded-xl shadow p-2">
           <Image
-            source={{ uri: recipe.image }}
-            className="w-20 h-20 rounded-lg mr-4"
+            source={recipe.image}
+            className="w-24 h-24 rounded-xl mr-2"
+            resizeMode="cover"
           />
           <View className="flex-1">
-            <Text className="text-base font-semibold">{recipe.title}</Text>
-            <Text className="text-xs text-gray-600">{recipe.description}</Text>
-            <View className="flex-row mt-1 flex-wrap">
-              {recipe.tags.map((tag, index) => (
+            <View className="flex-row justify-between items-start">
+              <Text className="font-bold text-base flex-1">{recipe.title}</Text>
+              <TouchableOpacity className="ml-2">
+                <Ionicons name="heart-outline" size={20} color="black" />
+              </TouchableOpacity>
+            </View>
+            <Text className="text-xs text-gray-600 mb-2">{recipe.description}</Text>
+            <View className="flex-row flex-wrap">
+              {recipe.tags.map((tag, j) => (
                 <Text
-                  key={index}
-                  className="text-white bg-colorboton px-2 py-0.5 rounded-full text-xs mr-2 mt-1"
+                  key={j}
+                  className="text-xs bg-colorboton text-white px-2 py-1 rounded-full mr-1 mb-1"
                 >
                   {tag}
                 </Text>
