@@ -8,11 +8,17 @@ export default function RootLayout() {
       options={{ title: 'Pantalla de prueba' }}
     />
     <Stack.Screen
-      name="(tabs)"
+      name="login"
       options={{
         headerShown: false,
       }}
     />
+    <Stack.Screen
+      name="(tabs)"
+      options={{
+        headerShown: false,
+      }}
+       />
     <Stack.Screen
       name="recipes/[id]"
       options={{
