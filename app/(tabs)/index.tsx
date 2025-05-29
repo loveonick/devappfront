@@ -26,10 +26,6 @@ const recipes = [
 
 const index = () => {
   return (
-<<<<<<< HEAD
-    <View>
-      <Text className='font-bold'>hola mundo</Text>
-=======
     <View className="flex-1 bg-white px-4 pt-10">
       {/* Header */}
       <View className="flex-row justify-between items-center mb-4">
@@ -89,7 +85,6 @@ const index = () => {
           <Text className="text-pink-600 font-semibold">Iniciar Sesión</Text>
         </TouchableOpacity>
       </View>
->>>>>>> 38181e0e3f5ccdeed77d418bcc71b4badc67e9bc
     </View>
   );
 }
