@@ -9,6 +9,7 @@ const _layout = () => {
             name="index"
             options={{
                 title: 'Inicio',
+                headerShown: false,
             }}
         />
     </Tabs>

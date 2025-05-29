@@ -12,7 +12,10 @@ module.exports = {
         colorfondo : '#FEF5EF',
         colortag: '#6B0A1D',
         
-      }
+      },
+       fontFamily: {
+      sans: ['Jost', 'System'],
+      },
     },
   },
   plugins: [],
