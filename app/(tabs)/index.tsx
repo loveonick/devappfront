@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import SearchBar from '../../components/SearchBar';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import RecipeCard from '../../components/RecipeCard';
 
 const tags = ['Mexicana', 'Argentina', 'Saludable', 'Vegana'];
 
@@ -51,50 +52,37 @@ const index = () => {
 
         {/* FlatList*/}
         <FlatList
-          data={recipes}
-          keyExtractor={(_, i) => i.toString()}
-          contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
-          ListHeaderComponent={
+        data={recipes}
+        keyExtractor={(_, i) => i.toString()}
+        contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
+        ListHeaderComponent={
             <>
-              {/* Recetas de la semana */}
-              <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+            {/* Recetas de la semana */}
+            <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
                 <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
                 <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
                 <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-              </ScrollView>
+            </ScrollView>
 
-              {/* Filtros */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 p-3">
+            {/* Filtros */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 p-3">
                 {tags.map((tag, i) => (
-                  <TouchableOpacity key={i} className="px-4 py-2 bg-white rounded-full mr-2 shadow">
+                <TouchableOpacity key={i} className="px-4 py-2 bg-white rounded-full mr-2 shadow">
                     <Text>{tag}</Text>
-                  </TouchableOpacity>
+                </TouchableOpacity>
                 ))}
-              </ScrollView>
+            </ScrollView>
             </>
-          }
-          renderItem={({ item }) => (
-            <View className="flex-row mb-4 bg-white rounded-xl shadow p-2">
-              <Image source={item.image} className="w-24 h-24 rounded-xl mr-2" />
-              <View className="flex-1">
-                <View className="flex-row justify-between">
-                  <Text className="font-bold text-base">{item.title}</Text>
-                  <TouchableOpacity>
-                    <Ionicons name="heart-outline" size={20} color="black" />
-                  </TouchableOpacity>
-                </View>
-                <Text className="text-xs text-gray-600 mb-2">{item.description}</Text>
-                <View className="flex-row flex-wrap">
-                  {item.tags.map((tag, j) => (
-                    <Text key={j} className="text-xs bg-colortag text-white px-2 py-1 rounded-full mr-1 mb-1">
-                      {tag}
-                    </Text>
-                  ))}
-                </View>
-              </View>
-            </View>
-          )}
+        }
+        renderItem={({ item }) => (
+            <RecipeCard
+            imgsrc={item.image}
+            title={item.title}
+            description={item.description}
+            tags={item.tags}
+            />
+        )}
         />
 
         {/* Footer fijo */}
