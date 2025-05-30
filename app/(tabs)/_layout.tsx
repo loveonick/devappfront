@@ -21,8 +21,17 @@ const _layout = () => {
             <Ionicons name="person" color={color} size={size} />
           ),
         }}
-      />
+        />
+        <Tabs.Screen
+        options={{
+          title: 'Recetas',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book" color={color} size={size} />
+          ),
+        }}
+        />
     </Tabs>
+
   )
 }
 
