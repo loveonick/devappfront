@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/type'; 
 
 const recipes = [
   {
@@ -26,7 +29,11 @@ const recipes = [
   },
 ];
 
+type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
+
 const ProfileScreen = () => {
+  const router = useRouter();
+
   return (
     <ScrollView className="flex-1 bg-white px-4 py-6">
       {/* Perfil */}
@@ -34,7 +41,6 @@ const ProfileScreen = () => {
         <Image
           source={require('../../../assets/profileExample.jpg')}
           className="w-20 h-20 rounded-full mr-4"
-          resizeMode="cover"
         />
         <View className="flex-1">
           <Text className="text-xl font-bold">Brad_Pitt</Text>
@@ -44,7 +50,10 @@ const ProfileScreen = () => {
 
       {/* Botones de perfil */}
       <View className="flex-row justify-between flex-wrap gap-y-2 mb-4">
-        <TouchableOpacity className="bg-colorboton px-4 py-2 rounded-md">
+        <TouchableOpacity
+          className="bg-colorboton px-4 py-2 rounded-md"
+          onPress={() => router.push('/profile/edit')}
+        >
           <Text className="text-white font-semibold">Editar perfil</Text>
         </TouchableOpacity>
         <TouchableOpacity className="bg-colorboton px-4 py-2 rounded-md">
@@ -52,7 +61,7 @@ const ProfileScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Botones de filtro */}
+      {/* Filtros */}
       <View className="flex-row flex-wrap mb-4 gap-2">
         <TouchableOpacity className="bg-gray-200 px-3 py-1 rounded-full">
           <Text className="text-black font-medium">Mis Recetas</Text>
@@ -63,13 +72,9 @@ const ProfileScreen = () => {
       </View>
 
       {/* Lista de recetas */}
-      {recipes.map((recipe, i) => (
-        <View key={i} className="flex-row mb-4 bg-white rounded-xl shadow p-2">
-          <Image
-            source={recipe.image}
-            className="w-24 h-24 rounded-xl mr-2"
-            resizeMode="cover"
-          />
+      {recipes.map((recipe) => (
+        <View key={recipe.id} className="flex-row mb-4 bg-white rounded-xl shadow p-2">
+          <Image source={recipe.image} className="w-24 h-24 rounded-xl mr-2" />
           <View className="flex-1">
             <View className="flex-row justify-between items-start">
               <Text className="font-bold text-base flex-1">{recipe.title}</Text>
@@ -79,9 +84,9 @@ const ProfileScreen = () => {
             </View>
             <Text className="text-xs text-gray-600 mb-2">{recipe.description}</Text>
             <View className="flex-row flex-wrap">
-              {recipe.tags.map((tag, j) => (
+              {recipe.tags.map((tag, index) => (
                 <Text
-                  key={j}
+                  key={index}
                   className="text-xs bg-colorboton text-white px-2 py-1 rounded-full mr-1 mb-1"
                 >
                   {tag}
