@@ -14,7 +14,7 @@ const _layout = () => {
             }}
         />
         <Tabs.Screen
-        name="perfil"
+        name="profile"
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color, size }) => (
@@ -23,6 +23,7 @@ const _layout = () => {
         }}
         />
         <Tabs.Screen
+        name= "createrecipe"
         options={{
           title: 'Recetas',
           tabBarIcon: ({ color, size }) => (
