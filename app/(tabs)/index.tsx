@@ -67,7 +67,9 @@ const index = () => {
               {/* Filtros */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 p-3">
                 {tags.map((tag, i) => (
-                  <TouchableOpacity key={i} className="px-4 py-2 bg-white rounded-full mr-2 shadow">
+                  <TouchableOpacity 
+                  onPress={() => router.push('../recipes/recipeslog')}
+                  key={i} className="px-4 py-2 bg-white rounded-full mr-2 shadow">
                     <Text>{tag}</Text>
                   </TouchableOpacity>
                 ))}
@@ -85,13 +87,15 @@ const index = () => {
                   </TouchableOpacity>
                 </View>
                 <Text className="text-xs text-gray-600 mb-2">{item.description}</Text>
-                <View className="flex-row flex-wrap">
+                <TouchableOpacity 
+                onPress={() => router.push('../recipes/recipesNoLog')}
+                className="flex-row flex-wrap">
                   {item.tags.map((tag, j) => (
                     <Text key={j} className="text-xs bg-colortag text-white px-2 py-1 rounded-full mr-1 mb-1">
                       {tag}
                     </Text>
                   ))}
-                </View>
+                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -100,7 +104,8 @@ const index = () => {
         {/* Footer fijo */}
         <View className="absolute bottom-0 left-0 right-0 bg-pink-200 p-4 flex-row items-center justify-between">
           <Text className="text-sm font-semibold">¿Todavía no tienes cuenta? ¡Únete!</Text>
-          <TouchableOpacity className="bg-white px-3 py-1 rounded">
+          <TouchableOpacity 
+          className="bg-white px-3 py-1 rounded">
             <Text className="text-pink-600 font-semibold">Iniciar Sesión</Text>
           </TouchableOpacity>
         </View>
