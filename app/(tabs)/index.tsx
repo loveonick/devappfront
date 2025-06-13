@@ -1,12 +1,26 @@
 import { FlatList, Image, Text, TouchableOpacity, View, ScrollView } from 'react-native';
-import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import SearchBar from '../../components/SearchBar';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecipeCard from '../../components/RecipeCard';
+import Tags from '../../components/Tags';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-const tags = ['Mexicana', 'Argentina', 'Saludable', 'Vegana'];
+type Category = {
+  category: string;
+  title: string;
+};
+
+
+const tags: Category[] = [
+  { category: 'Todos', title: 'Todos' },
+  { category: 'Mexicana', title: 'Mexicana' },
+  { category: 'Argentina', title: 'Argentina' },
+  { category: 'Saludable', title: 'Saludable' },
+  { category: 'Vegana', title: 'Vegana' },
+];
 
 const recipes = [
   {
@@ -31,7 +45,9 @@ const recipes = [
 
 const index = () => {
   const router = useRouter();
-
+  const [searchText, setSearchText] = useState('');
+  const [selectedTag, setSelectedTag] = useState('Todos');
+  
   return (
     <SafeAreaView className='h-full bg-colorfondo'>
       <View className="flex-1 mt-7 bg-white">
@@ -43,19 +59,25 @@ const index = () => {
             resizeMode="contain"
           />
           <View className="flex-1 ml-4">
-            <SearchBar
-              onPress={() => router.push('')}
-              placeholder="Buscar recetas..."
-            />
+            <TouchableOpacity onPress={() => router.push('/search')}>
+              <SearchBar
+                placeholder="Buscar recetas..."
+                value=""
+                onChangeText={() => {}}
+              />
+            </TouchableOpacity>
+          </View>
+          <View className="ml-4">
+            <MaterialIcons name="notifications-none" size={24} color="black" />
           </View>
         </View>
 
         {/* FlatList*/}
         <FlatList
-        data={recipes}
-        keyExtractor={(_, i) => i.toString()}
-        contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
-        ListHeaderComponent={
+          data={recipes}
+          keyExtractor={(_, i) => i.toString()}
+          contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
+          ListHeaderComponent={
             <>
             {/* Recetas de la semana */}
             <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
@@ -66,30 +88,24 @@ const index = () => {
             </ScrollView>
 
             {/* Filtros */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 p-3">
-                {tags.map((tag, i) => (
-                <TouchableOpacity key={i} className="px-4 py-2 bg-white rounded-full mr-2 shadow">
-                    <Text>{tag}</Text>
-                </TouchableOpacity>
-                ))}
-            </ScrollView>
+            <Tags categories={tags}/>
             </>
         }
         renderItem={({ item }) => (
             <RecipeCard
-            imgsrc={item.image}
-            title={item.title}
-            description={item.description}
-            tags={item.tags}
+              imgsrc={item.image}
+              title={item.title}
+              description={item.description}
+              tags={item.tags}
             />
         )}
         />
 
         {/* Footer fijo */}
-        <View className="absolute bottom-0 left-0 right-0 bg-pink-200 p-4 flex-row items-center justify-between">
-          <Text className="text-sm font-semibold">¿Todavía no tienes cuenta? ¡Únete!</Text>
+        <View className="absolute bottom-0 left-0 right-0 bg-colorboton p-4 flex-row items-center justify-between">
+          <Text className="text-sm font-semibold text-white">¿Todavía no tienes cuenta? ¡Únete!</Text>
           <TouchableOpacity className="bg-white px-3 py-1 rounded">
-            <Text className="text-pink-600 font-semibold">Iniciar Sesión</Text>
+            <Text className="text-colorboton font-semibold">Iniciar Sesión</Text>
           </TouchableOpacity>
         </View>
       </View>

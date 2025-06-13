@@ -4,8 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 const _layout = () => {
+  const color = '#6B0A1D'
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: 'blue' }}>
+    <Tabs screenOptions={{ tabBarActiveTintColor: color }}>
       <Tabs.Screen
         name="index"
         options={{
@@ -36,7 +37,13 @@ const _layout = () => {
           headerShown: false,
         }}
       />
-
+      <Tabs.Screen
+        name="search"
+        options={{
+          href: null,
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 };

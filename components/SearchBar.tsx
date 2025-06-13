@@ -4,19 +4,20 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
     placeholder: string;
-    onPress?: () => void;
+    value: string;
+    onChangeText: (text: string) => void;
 }
 
-const SearchBar = ({placeholder,onPress}: Props) => {
+const SearchBar = ({ placeholder, value, onChangeText }: Props) => {
   return (
-    <View className="flex-row items-center bg-white rounded-xl px-3 py-1">
+    <View className="flex-row items-center bg-white rounded-xl px-3 py-2">
         <Ionicons name="search" size={20} color="gray" />
         <TextInput
-            onPress={onPress}
-            placeholder={placeholder}
-            value=""
-            onChangeText={() => {}}
-            className="flex-1 ml-2 text-gray-500"
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          className="flex-1 ml-2 text-gray-700"
+          returnKeyType="search"
         />
     </View>
   )
