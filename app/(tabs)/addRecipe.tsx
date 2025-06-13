@@ -1,10 +1,30 @@
-import { View, Text, TextInput, Pressable, Switch, Image } from 'react-native';
+import { View, Text, TextInput, Switch, Image, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router'; // CORREGIDO
+import * as ImagePicker from 'expo-image-picker';
 
-export default function AddRecipeScreen() {
+export default function Index() {
+  const router = useRouter(); // OK
   const [commentsEnabled, setCommentsEnabled] = useState(false);
   const [wifiOnly, setWifiOnly] = useState(false);
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permiso requerido para acceder a la galería');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
 
   return (
     <View className="flex-1 bg-white px-6 py-10">
@@ -22,11 +42,20 @@ export default function AddRecipeScreen() {
         placeholder="Describe tu plato"
       />
 
-      <Text className="text-[#1C1B1F] mb-2">Imagen del Plato</Text>
-      <View className="bg-gray-200 rounded-md h-32 justify-center items-center mb-4">
-        <Text className="text-gray-500">⬆️</Text>
-        <Text className="text-black">Agregar imagen</Text>
-      </View>
+      <Text className="text-[#1C1B1F] font-bold mb-2">Imagen del Plato</Text>
+      <TouchableOpacity
+        onPress={pickImage}
+        className="bg-gray-200 rounded-md h-32 justify-center items-center mb-4"
+      >
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} className="w-full h-32 rounded-md" resizeMode="cover" />
+        ) : (
+          <>
+            <Text className="text-gray-500 text-lg">⬆️</Text>
+            <Text className="text-black">Agregar imagen</Text>
+          </>
+        )}
+      </TouchableOpacity>
 
       <View className="flex-row items-center mb-3">
         <Switch
@@ -50,12 +79,12 @@ export default function AddRecipeScreen() {
         <Text className="ml-2 font-bold text-[#1C1B1F]">Publicar Solo WIFI</Text>
       </View>
 
-      <Pressable
+      <TouchableOpacity
         onPress={() => router.push('../createrecipe/ingredients')}
         className="bg-[#9D5C63] rounded-xl w-40 mx-auto py-2"
       >
         <Text className="text-white font-bold text-center">Siguiente</Text>
-      </Pressable>
+      </TouchableOpacity>
     </View>
   );
 }
