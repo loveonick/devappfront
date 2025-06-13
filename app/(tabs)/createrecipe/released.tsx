@@ -8,7 +8,7 @@ export default function PublicadoScreen() {
       <Text className="text-base text-center mb-8">Espera notificaciones de tu receta</Text>
 
       <Pressable
-        onPress={() => router.push('/(tabs)')} 
+        onPress={() => router.push('../createrecipe')} 
         className="bg-[#9D5C63] rounded-full px-6 py-2"
       >
         <Text className="text-white font-bold text-base">Regresar</Text>
