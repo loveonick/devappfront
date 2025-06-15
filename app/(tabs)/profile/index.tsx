@@ -65,7 +65,7 @@ const ProfileScreen = () => {
       <View className="flex-row justify-between flex-wrap gap-y-2 mb-4">
         <TouchableOpacity
           className="bg-colorboton px-4 py-2 rounded-md"
-          onPress={() => router.push('edit')}
+          onPress={() => router.push('/(tabs)/profile/edit')}
         >
           <Text className="text-white font-semibold">Editar perfil</Text>
         </TouchableOpacity>
