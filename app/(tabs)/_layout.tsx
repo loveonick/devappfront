@@ -1,6 +1,5 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
 const _layout = () => {
@@ -30,11 +29,11 @@ const _layout = () => {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
+          title: 'Inicio',
+          headerShown: false, 
           tabBarIcon: ({ color, size }) => (
             <AntDesign name="user" size={size} color={color} />
           ),
-          headerShown: false,
         }}
       />
       <Tabs.Screen
