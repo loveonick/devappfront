@@ -1,26 +1,38 @@
-import { View, Text } from 'react-native'
-import React from 'react'
-import {Tabs} from 'expo-router'
-import {createrecipe} from 'app'
+import React from 'react';
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-const _layout = () => {
+export default function TabLayout() {
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: '#9B5C5C' }}>
+    <Tabs>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Inicio',
+          headerShown: false, 
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" color={color} size={size} /> 
+          ),
         }}
       />
       <Tabs.Screen
-        name="../createrecipe/index"
+        name="recipes" 
         options={{
-          title: 'Crear',
+          title: 'Recetas',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="perfil" 
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" color={color} size={size} />
+          ),
         }}
       />
     </Tabs>
-    
-  )
+  );
 }
-
-export default _layout

@@ -1,8 +1,12 @@
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import React from 'react'
+import { FlatList, Image, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import SearchBar from '../../components/SearchBar';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const tags = ['Mexicana', 'Argentina', 'Saludable', 'Vegana'];
+
 const recipes = [
   {
     image: require('../../assets/descarga_1.jpg'),
@@ -25,24 +29,40 @@ const recipes = [
 ];
 
 const index = () => {
-  return (
-    <View className="flex-1 bg-white px-4 pt-10">
-      {/* Header */}
-      <View className="flex-row justify-between items-center mb-4">
-        <Image source={require('../../assets/logo.png')} style={{ width: 40, height: 40 }} />
-        <TextInput
-          placeholder="Encontrar recetas..."
-          className="flex-1 ml-3 bg-gray-100 p-2 rounded-xl"
-        />
-      </View>
+  const router = useRouter();
 
-      {/* Recetas de la semana */}
-      <Text className="text-xl font-bold mb-2">Recetas de la semana</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-        <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-        <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-        <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-      </ScrollView>
+  return (
+    <SafeAreaView className='h-full bg-colorfondo'>
+      <View className="flex-1 mt-7 bg-white">
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-4 bg-colorfondo">
+          <Image
+            source={require('../../assets/logo.png')}
+            style={{ width: 70, height: 70 }}
+            resizeMode="contain"
+          />
+          <View className="flex-1 ml-4">
+            <SearchBar
+              onPress={() => router.push('')}
+              placeholder="Buscar recetas..."
+            />
+          </View>
+        </View>
+
+        {/* FlatList*/}
+        <FlatList
+          data={recipes}
+          keyExtractor={(_, i) => i.toString()}
+          contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
+          ListHeaderComponent={
+            <>
+              {/* Recetas de la semana */}
+              <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+                <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
+                <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
+                <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
+              </ScrollView>
 
               {/* Filtros */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 p-3">
@@ -92,6 +112,6 @@ const index = () => {
       </View>
     </SafeAreaView>
   );
-}
+};
 
-export default index
+export default index;
