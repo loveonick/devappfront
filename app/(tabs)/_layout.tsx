@@ -1,39 +1,50 @@
-import { View, Text } from 'react-native'
-import React from 'react'
-import {Tabs} from 'expo-router'
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Tabs } from 'expo-router';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 const _layout = () => {
+  const color = '#6B0A1D'
   return (
-    <Tabs>
-        <Tabs.Screen
-            name="index"
-            options={{
-                title: 'Inicio',
-                headerShown: false,
-            }}
-        />
-        <Tabs.Screen
+    <Tabs screenOptions={{ tabBarActiveTintColor: color }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Inicio',
+          tabBarIcon: ({ color, size }) => (
+            <AntDesign name="home" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="createrecipe"
+        options={{
+          title: 'Receta',
+          tabBarIcon: ({ color, size }) => (
+            <AntDesign name="pluscircleo" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
+          title: 'Inicio',
+          headerShown: false, 
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" color={color} size={size} />
+            <AntDesign name="user" size={size} color={color} />
           ),
         }}
-        />
-        <Tabs.Screen
-        name= "createrecipe"
+      />
+      <Tabs.Screen
+        name="search"
         options={{
-          title: 'Recetas',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book" color={color} size={size} />
-          ),
+          href: null,
+          headerShown: false,
         }}
-        />
+      />
     </Tabs>
+  );
+};
 
-  )
-}
-
-export default _layout
+export default _layout;

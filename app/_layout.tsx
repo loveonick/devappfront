@@ -29,6 +29,6 @@ export default function RootLayout() {
           fontWeight: 'bold',
         },
       }}
-    />
+      />
   </Stack>
 }
