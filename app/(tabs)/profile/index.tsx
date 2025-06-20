@@ -1,16 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useProfileStore } from '../../../stores/profileStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ProfileScreen = () => {
   const router = useRouter();
-  const { username, email, profileImage, logout } = useProfileStore();
+
+  const [username, setUsername] = useState('Usuario');
+  const [email, setEmail] = useState('correo@ejemplo.com');
+  const [profileImage, setProfileImage] = useState<any>(null);
 
   const [activeTab, setActiveTab] = useState<'mis-recetas' | 'guardadas'>('mis-recetas');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutMessage, setShowLogoutMessage] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadProfile = async () => {
+        try {
+          const data = await AsyncStorage.getItem('profileData');
+          if (data) {
+            const { username, email, image } = JSON.parse(data);
+            if (username) setUsername(username);
+            if (email) setEmail(email);
+            if (image) setProfileImage({ uri: image });
+          }
+        } catch (error) {
+          console.error('Error cargando perfil:', error);
+        }
+      };
+      loadProfile();
+    }, [])
+  );
 
   const handleConfirmLogout = () => {
     setShowLogoutConfirm(false);
@@ -19,7 +42,7 @@ const ProfileScreen = () => {
 
   const handleLogoutComplete = () => {
     setShowLogoutMessage(false);
-    logout(); // Ejecuta cierre de sesión
+    // lógica de logout si la implementás
   };
 
   const recipes = [
@@ -56,18 +79,22 @@ const ProfileScreen = () => {
       <ScrollView className="flex-1 bg-white px-4 py-6">
         {/* Perfil */}
         <View className="flex-col sm:flex-row items-center sm:items-start mb-6">
-          <Image
-            source={profileImage}
-            className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4"
-            resizeMode="contain"
-          />
+          {profileImage ? (
+            <Image
+              source={profileImage}
+              className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4"
+              resizeMode="contain"
+            />
+          ) : (
+            <View className="w-20 h-20 rounded-full bg-gray-200 mb-2 sm:mb-0 sm:mr-4" />
+          )}
           <View className="items-center sm:items-start">
             <Text className="text-xl font-bold text-center sm:text-left">{username}</Text>
             <Text className="text-gray-500 text-center sm:text-left">{email}</Text>
           </View>
         </View>
 
-        {/* Botones de perfil */}
+        {/* Botones */}
         <View className="flex-row justify-between flex-wrap gap-y-2 mb-4">
           <TouchableOpacity
             className="bg-colorboton px-4 py-2 rounded-md"
@@ -99,7 +126,7 @@ const ProfileScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Lista de recetas */}
+        {/* Recetas */}
         {displayedRecipes.map((recipe) => (
           <View
             key={recipe.id}
@@ -133,7 +160,7 @@ const ProfileScreen = () => {
         ))}
       </ScrollView>
 
-      {/* Modal de confirmación de cierre de sesión */}
+      {/* Modal confirmación cierre de sesión */}
       <Modal visible={showLogoutConfirm} transparent animationType="fade">
         <View className="flex-1 justify-center items-center bg-black bg-opacity-50 px-10">
           <View className="bg-white rounded-xl p-6 w-full items-center">
@@ -156,7 +183,7 @@ const ProfileScreen = () => {
         </View>
       </Modal>
 
-      {/* Modal de sesión cerrada */}
+      {/* Modal sesión cerrada */}
       <Modal visible={showLogoutMessage} transparent animationType="fade">
         <View className="flex-1 justify-center items-center bg-black bg-opacity-50 px-10">
           <View className="bg-white rounded-xl p-6 w-full items-center">

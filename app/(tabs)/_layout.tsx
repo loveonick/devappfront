@@ -29,7 +29,7 @@ const _layout = () => {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Inicio',
+          title: 'Perfil',
           headerShown: false, 
           tabBarIcon: ({ color, size }) => (
             <AntDesign name="user" size={size} color={color} />
