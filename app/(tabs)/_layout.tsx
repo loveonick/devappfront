@@ -23,10 +23,29 @@ const _layout = () => {
         }}
         />
         <Tabs.Screen
+        name="receta"
         options={{
           title: 'Recetas',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="book" color={color} size={size} />
+          ),
+        }}
+        />
+        <Tabs.Screen
+        name="notificacion User"
+         options={{
+          title: 'notificaciones',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="heart" color={color} size={size} />
+          ),
+        }}
+        />
+         <Tabs.Screen
+        name="notificacion Admin"
+         options={{
+          title: 'notificaciones',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="heart" color={color} size={size} />
           ),
         }}
         />

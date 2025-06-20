@@ -7,7 +7,7 @@ const EnterCodeScreen = () => {
       {/* Logo */}
       <View className="items-center mb-8">
         <Image
-          source={{ uri: 'https://your-logo-url-here.com/logo.png' }}
+          source={{ uri: '../../assets/logo.png' }}
           className="w-20 h-20 mb-2"
         />
         <Text className="text-xl font-bold">COOKING BOOK</Text>

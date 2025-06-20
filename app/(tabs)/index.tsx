@@ -47,6 +47,9 @@ const index = () => {
               placeholder="Buscar recetas..."
             />
           </View>
+          <View>
+            <Ionicons name="notifications-outline" size={20} className="ml-4" />
+          </View>
         </View>
 
         {/* FlatList*/}
