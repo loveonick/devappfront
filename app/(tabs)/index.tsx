@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import RecipeCard from '../../components/RecipeCard';
 import Tags from '../../components/Tags';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useAuth } from '../context/AuthContext';
 
 type Category = {
   category: string;
@@ -47,7 +48,8 @@ const index = () => {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
   const [selectedTag, setSelectedTag] = useState('Todos');
-  
+  const { user } = useAuth();
+
   return (
     <SafeAreaView className='h-full bg-colorfondo'>
       <View className="flex-1 mt-7 bg-white">
@@ -103,13 +105,17 @@ const index = () => {
         )}
         />
 
-        {/* Footer fijo */}
-        <View className="absolute bottom-0 left-0 right-0 bg-colorboton p-4 flex-row items-center justify-between">
-          <Text className="text-sm font-semibold text-white">¿Todavía no tienes cuenta? ¡Únete!</Text>
-          <TouchableOpacity className="bg-white px-3 py-1 rounded">
-            <Text className="text-colorboton font-semibold">Iniciar Sesión</Text>
-          </TouchableOpacity>
-        </View>
+        {!user && (
+          <View className="absolute bottom-0 left-0 right-0 bg-colorboton p-4 flex-row items-center justify-between">
+            <Text className="text-sm font-semibold text-white">¿Todavía no tienes cuenta? ¡Únete!</Text>
+            <TouchableOpacity
+              className="bg-white px-3 py-1 rounded"
+              onPress={() => router.push('/auth/login')}
+            >
+              <Text className="text-colorboton font-semibold">Iniciar Sesión</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );

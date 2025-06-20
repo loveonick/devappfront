@@ -1,9 +1,25 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Tabs, Redirect } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { useAuth } from '../context/AuthContext';
+import { View, ActivityIndicator } from 'react-native';
 
-const _layout = () => {
-  const color = '#6B0A1D'
+const TabsLayout = () => {
+  const { user, isLoading } = useAuth();
+  const color = '#6B0A1D';
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return <Redirect href="/auth/login" />;
+  }
+
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: color }}>
       <Tabs.Screen
@@ -29,8 +45,8 @@ const _layout = () => {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Inicio',
-          headerShown: false, 
+          title: 'Perfil',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <AntDesign name="user" size={size} color={color} />
           ),
@@ -39,7 +55,7 @@ const _layout = () => {
       <Tabs.Screen
         name="search"
         options={{
-          href: null,
+          href: null, // Oculta esta tab
           headerShown: false,
         }}
       />
@@ -47,4 +63,4 @@ const _layout = () => {
   );
 };
 
-export default _layout;
+export default TabsLayout;
