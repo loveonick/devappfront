@@ -1,9 +1,9 @@
-import React from 'react';
 import { Tabs } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-const _layout = () => {
-  const color = '#6B0A1D'
+const color = '#6B0A1D';
+
+export default function TabLayout() {
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: color }}>
       <Tabs.Screen
@@ -29,22 +29,13 @@ const _layout = () => {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Inicio',
-          headerShown: false, 
+          title: 'Perfil',
           tabBarIcon: ({ color, size }) => (
             <AntDesign name="user" size={size} color={color} />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          href: null,
           headerShown: false,
         }}
       />
     </Tabs>
   );
-};
-
-export default _layout;
+}

@@ -1,26 +1,25 @@
-import { View, Text, TextInput, Pressable, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, Image, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { useRecipeContext } from '../../context/RecipeContext';
+
+interface RecipeStep {
+  description: string;
+  imageUri?: string;
+}
 
 export default function NewProcedureScreen() {
   const params = useLocalSearchParams();
-  const currentStep = parseInt(Array.isArray(params.step) ? params.step[0] : params.step || '1', 10);
-
-  const [stepDescription, setStepDescription] = useState('');
-  const [imageUri, setImageUri] = useState<string | null>(null);
-
-  useEffect(() => {
-    setStepDescription('');
-    setImageUri(null);
-  }, [currentStep]);
+  const router = useRouter();
+  const { addRecipe } = useRecipeContext();
+  const [steps, setSteps] = useState<RecipeStep[]>([]);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Permiso requerido para acceder a la galería');
-      return;
-    }
+    if (status !== 'granted') return;
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -28,50 +27,96 @@ export default function NewProcedureScreen() {
     });
 
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+      const newSteps = [...steps];
+      newSteps[currentStep - 1] = {
+        ...newSteps[currentStep - 1],
+        imageUri: result.assets[0].uri,
+      };
+      setSteps(newSteps);
     }
   };
 
   const handleNextStep = () => {
-    console.log(`Step ${currentStep} description: ${stepDescription}`);
-    console.log(`Image URI: ${imageUri}`);
-    router.push({
-      pathname: '../createrecipe/newProcedure',
-      params: { step: currentStep + 1 },
-    });
+    if (!steps[currentStep - 1]?.description) {
+      alert('Agrega una descripción para este paso');
+      return;
+    }
+    setCurrentStep(prev => prev + 1);
   };
 
-  const handleFinish = () => {
-    console.log(`Final Step ${currentStep} description: ${stepDescription}`);
-    console.log(`Image URI: ${imageUri}`);
-    router.push('../createrecipe/released');
+  const handleFinish = async () => {
+  if (!steps[currentStep - 1]?.description) {
+    alert('Completa el paso actual antes de finalizar');
+    return;
+  }
+
+  const newRecipe = {
+    id: Date.now().toString(),
+    title: params.title as string,
+    description: params.description as string,
+    imageUri: params.imageUri as string,
+    ingredients: JSON.parse(params.ingredients as string),
+    steps: steps.filter(step => step.description),
+    tags: JSON.parse(params.tags as string),
   };
+
+  try {
+    await addRecipe(newRecipe);
+    router.push({
+      pathname: '/createrecipe/released',
+      params: { id: newRecipe.id }
+    });
+  } catch (error) {
+    console.error('Error saving recipe:', error);
+    alert('Error al guardar la receta');
+  }
+};
+
+  useEffect(() => {
+    if (steps.length < currentStep) {
+      setSteps(prev => [...prev, { description: '' }]);
+    }
+  }, [currentStep]);
 
   return (
-    <View className="flex-1 bg-white px-6 py-10">
-      <Text className="text-xl font-bold mb-4 text-center">¿Cuál es el procedimiento?</Text>
-      <Text className="text-base font-bold mb-2">Paso {currentStep}</Text>
+    <View className="flex-1 bg-white px-6 pt-12">
+      <TouchableOpacity 
+        onPress={() => router.back()}
+        className="absolute top-12 left-6 z-10"
+      >
+        <Ionicons name="arrow-back" size={24} color="#9D5C63" />
+      </TouchableOpacity>
+
+      <Text className="text-xl font-bold mb-4 text-center">Paso {currentStep}</Text>
 
       <TextInput
-        className="bg-gray-100 rounded-md h-32 px-4 py-2 text-[#1C1B1F] mb-4"
+        className="bg-gray-100 rounded-md h-32 px-4 py-2 mb-4"
         multiline
-        placeholder="¿Cómo se prepara la receta?"
-        placeholderTextColor="#9CA3AF"
-        value={stepDescription}
-        onChangeText={setStepDescription}
+        placeholder="Describe este paso..."
+        value={steps[currentStep - 1]?.description || ''}
+        onChangeText={(text) => {
+          const newSteps = [...steps];
+          newSteps[currentStep - 1] = {
+            ...newSteps[currentStep - 1],
+            description: text,
+          };
+          setSteps(newSteps);
+        }}
       />
 
-      <Text className="font-bold text-[#1C1B1F] mb-2">¡Agrega imagen del paso!</Text>
       <Pressable
         onPress={pickImage}
         className="bg-gray-200 rounded-md h-32 justify-center items-center mb-6"
       >
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} className="w-full h-32 rounded-md" resizeMode="cover" />
+        {steps[currentStep - 1]?.imageUri ? (
+          <Image 
+            source={{ uri: steps[currentStep - 1].imageUri }} 
+            className="w-full h-32 rounded-md" 
+          />
         ) : (
           <>
-            <Text className="text-gray-500 text-2xl">⬆️</Text>
-            <Text className="text-black">Agregar imagen</Text>
+            <Ionicons name="image" size={32} color="#9D5C63" />
+            <Text className="text-[#9D5C63]">Agregar imagen</Text>
           </>
         )}
       </Pressable>
@@ -81,14 +126,14 @@ export default function NewProcedureScreen() {
           onPress={handleNextStep}
           className="bg-[#9D5C63] rounded-full px-6 py-2"
         >
-          <Text className="text-white font-bold text-base">Siguiente Paso</Text>
+          <Text className="text-white font-bold">Siguiente Paso</Text>
         </Pressable>
 
         <Pressable
           onPress={handleFinish}
           className="bg-black rounded-full px-6 py-2"
         >
-          <Text className="text-white font-bold text-base">Finalizar</Text>
+          <Text className="text-white font-bold">Finalizar</Text>
         </Pressable>
       </View>
     </View>

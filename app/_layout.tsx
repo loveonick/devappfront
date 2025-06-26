@@ -1,34 +1,31 @@
-import {Stack} from 'expo-router';
-import "./global.css"
+import { Stack } from 'expo-router';
+import './global.css';
+import { RecipeProvider } from '../app/context/RecipeContext';
 
 export default function RootLayout() {
-  return <Stack>
-    <Stack.Screen
-      name="test-navigator"
-      options={{ title: 'Pantalla de prueba' }}
-    />
-    <Stack.Screen
-      name="login"
-      options={{
-        headerShown: false,
-      }}
-    />
-    <Stack.Screen
-      name="(tabs)"
-      options={{
-        headerShown: false,
-      }}
-    />
-    <Stack.Screen
-      name="recipes/[id]"
-      options={{
-        title: 'Receta',
-        headerTitleAlign: 'center',
-        headerTitleStyle: {
-          fontSize: 20,
-          fontWeight: 'bold',
-        },
-      }}
-      />
-  </Stack>
+  return (
+    <RecipeProvider>
+      <Stack>
+        <Stack.Screen
+          name="(tabs)"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="recipes/[id]"
+          options={{
+            title: 'Receta',
+            headerTitleAlign: 'center',
+            headerTitleStyle: {
+              fontSize: 20,
+              fontWeight: 'bold',
+            },
+          }}
+        />
+        <Stack.Screen
+          name="createrecipe"
+          options={{ headerShown: false }}
+        />
+      </Stack>
+    </RecipeProvider>
+  );
 }
