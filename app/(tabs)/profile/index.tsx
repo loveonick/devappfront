@@ -4,41 +4,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../../context/AuthContext';
 
 const ProfileScreen = () => {
   const router = useRouter();
-
-  const [username, setUsername] = useState('Usuario');
-  const [email, setEmail] = useState('correo@ejemplo.com');
-  const [profileImage, setProfileImage] = useState<any>(null);
+  const { user, logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'mis-recetas' | 'guardadas'>('mis-recetas');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutMessage, setShowLogoutMessage] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      const loadProfile = async () => {
-        try {
-          const data = await AsyncStorage.getItem('profileData');
-          if (data) {
-            const { username, email, image } = JSON.parse(data);
-            if (username) setUsername(username);
-            if (email) setEmail(email);
-            if (image) setProfileImage({ uri: image });
-          }
-        } catch (error) {
-          console.error('Error cargando perfil:', error);
-        }
-      };
-      loadProfile();
-    }, [])
-  );
-
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setShowLogoutConfirm(false);
-    setShowLogoutMessage(true);
+    await logout();
   };
+
 
   const handleLogoutComplete = () => {
     setShowLogoutMessage(false);
@@ -79,18 +59,19 @@ const ProfileScreen = () => {
       <ScrollView className="flex-1 bg-white px-4 py-6">
         {/* Perfil */}
         <View className="flex-col sm:flex-row items-center sm:items-start mb-6">
-          {profileImage ? (
+          {user? (
             <Image
-              source={profileImage}
+              source={require('../../../assets/profileExample.jpg')}
               className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4"
-              resizeMode="contain"
+              resizeMode="cover"
             />
           ) : (
             <View className="w-20 h-20 rounded-full bg-gray-200 mb-2 sm:mb-0 sm:mr-4" />
           )}
           <View className="items-center sm:items-start">
-            <Text className="text-xl font-bold text-center sm:text-left">{username}</Text>
-            <Text className="text-gray-500 text-center sm:text-left">{email}</Text>
+            <Text className="text-xl font-bold text-center sm:text-left">{user?.username || 'Usuario'}</Text>
+            <Text className="text-gray-500 text-center sm:text-left">{user?.email || 'correo@ejemplo.com'}</Text>
+
           </View>
         </View>
 

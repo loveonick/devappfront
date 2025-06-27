@@ -1,8 +1,34 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useAuth } from '../context/AuthContext';
+import { router } from 'expo-router';
 
 const LoginScreen = () => {
+  const { login, user } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Si ya está logueado, redirigir
+  useEffect(() => {
+    if (user) {
+      router.replace('/(tabs)');
+    }
+  }, [user]);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    try {
+      await login(email, password);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo iniciar sesión');
+    }
+  };
+
   return (
     <View className="flex-1 bg-pink-50 items-center justify-center px-6">
       {/* Logo */}
@@ -19,11 +45,15 @@ const LoginScreen = () => {
       <View className="w-full space-y-4">
         <TextInput
           placeholder="Correo"
+          value={email}
+          onChangeText={setEmail}
           className="bg-white p-4 rounded-lg shadow-sm border border-gray-300"
         />
         <TextInput
           placeholder="Contraseña"
           secureTextEntry
+          value={password}
+          onChangeText={setPassword}
           className="bg-white p-4 rounded-lg shadow-sm border border-gray-300"
         />
         <View className="flex-row items-center">
@@ -33,7 +63,10 @@ const LoginScreen = () => {
       </View>
 
       {/* Login Button */}
-      <TouchableOpacity className="bg-rose-500 p-4 rounded-lg mt-6 w-full items-center">
+      <TouchableOpacity
+        onPress={handleLogin}
+        className="bg-rose-500 p-4 rounded-lg mt-6 w-full items-center"
+      >
         <Text className="text-white font-bold">Iniciar Sesión</Text>
       </TouchableOpacity>
 
@@ -63,7 +96,7 @@ const LoginScreen = () => {
         </View>
 
         {/* Register Link */}
-        <TouchableOpacity className="mt-4">
+        <TouchableOpacity className="mt-4" onPress={() => router.push('/auth/register')}>
           <Text className="text-sm text-gray-500">
             ¿No tienes cuenta? <Text className="text-rose-500">Regístrate</Text>
           </Text>
@@ -71,9 +104,7 @@ const LoginScreen = () => {
       </View>
 
       {/* Footer */}
-      <Text className="text-xs text-gray-400 mt-8">
-        Términos y condiciones
-      </Text>
+      <Text className="text-xs text-gray-400 mt-8">Términos y condiciones</Text>
       <Text className="text-xs text-gray-400">Cooking Book Corp.</Text>
     </View>
   );

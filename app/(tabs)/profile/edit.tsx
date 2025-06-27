@@ -4,13 +4,16 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../../context/AuthContext';
+
 
 const EditProfileScreen = () => {
   const router = useRouter();
 
-  const [newUsername, setNewUsername] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [newImage, setNewImage] = useState<any>(null);
+  const { user, updateUser } = useAuth();
+  const [newUsername, setNewUsername] = useState(user?.username || '');
+  const [newEmail, setNewEmail] = useState(user?.email || '');
+
   const [emailValid, setEmailValid] = useState(true);
 
   const [showConfirm, setShowConfirm] = useState(false);
@@ -39,10 +42,11 @@ const EditProfileScreen = () => {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
+  };
 
-    if (!result.canceled && result.assets?.length > 0) {
-      setNewImage({ uri: result.assets[0].uri });
-    }
+  const validateEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
   };
 
   const validateEmail = (email: string) => {
@@ -52,18 +56,17 @@ const EditProfileScreen = () => {
 
   const handleConfirm = async () => {
     try {
-      await AsyncStorage.setItem('profileData', JSON.stringify({
+      await updateUser({
         username: newUsername,
         email: newEmail,
-        image: newImage?.uri || null,
-      }));
-      console.log('Cambios guardados en AsyncStorage');
+      });
       setShowConfirm(false);
       setShowSavedMessage(true);
     } catch (error) {
-      console.error('Error guardando datos:', error);
+      console.error('Error actualizando perfil:', error);
     }
   };
+
 
   return (
     <>
@@ -75,11 +78,8 @@ const EditProfileScreen = () => {
         <View className="mt-12 items-center">
           {/* Imagen de perfil seleccionable */}
           <TouchableOpacity onPress={pickImage} className="relative mb-6">
-            {newImage?.uri ? (
-              <Image source={{ uri: newImage.uri }} className="w-24 h-24 rounded-full" resizeMode="contain" />
-            ) : (
-              <View className="w-24 h-24 rounded-full bg-gray-200" />
-            )}
+
+            <View className="w-24 h-24 rounded-full bg-gray-200" />
             <View className="absolute bottom-1 right-1 bg-white p-1 rounded-full">
               <Ionicons name="pencil" size={16} color="black" />
             </View>
