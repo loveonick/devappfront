@@ -30,7 +30,7 @@ const LoginScreen = () => {
   };
 
   return (
-    <View className="flex-1 bg-pink-50 items-center justify-center px-6">
+    <View className="flex-1 bg-colorfondo items-center justify-center px-6">
       {/* Logo */}
       <View className="items-center mb-8">
         <Image
@@ -65,7 +65,7 @@ const LoginScreen = () => {
       {/* Login Button */}
       <TouchableOpacity
         onPress={handleLogin}
-        className="bg-rose-500 p-4 rounded-lg mt-6 w-full items-center"
+        className="bg-colorboton p-4 rounded-lg mt-6 w-full items-center"
       >
         <Text className="text-white font-bold">Iniciar Sesión</Text>
       </TouchableOpacity>
@@ -73,7 +73,7 @@ const LoginScreen = () => {
       {/* Links */}
       <View className="w-full items-center mt-4">
         <TouchableOpacity>
-          <Text className="text-sm text-rose-500">¿Olvidé mi contraseña?</Text>
+          <Text className="text-sm text-colorboton">¿Olvidé mi contraseña?</Text>
         </TouchableOpacity>
 
         <View className="flex-row items-center mt-4">
@@ -98,7 +98,7 @@ const LoginScreen = () => {
         {/* Register Link */}
         <TouchableOpacity className="mt-4" onPress={() => router.push('/auth/register')}>
           <Text className="text-sm text-gray-500">
-            ¿No tienes cuenta? <Text className="text-rose-500">Regístrate</Text>
+            ¿No tienes cuenta? <Text className="text-colorboton">Regístrate</Text>
           </Text>
         </TouchableOpacity>
       </View>

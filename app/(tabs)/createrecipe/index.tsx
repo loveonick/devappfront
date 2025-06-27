@@ -1,20 +1,30 @@
-import { View, Text, TextInput, Switch, Image, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
 import { useState } from 'react';
-import { useRouter } from 'expo-router'; // CORREGIDO
+import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { useRecipeContext } from '../../context/RecipeContext';
+import { useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 export default function Index() {
-  const router = useRouter(); // OK
-  const [commentsEnabled, setCommentsEnabled] = useState(false);
-  const [wifiOnly, setWifiOnly] = useState(false);
+  const router = useRouter();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [tags] = useState<string[]>(['Nueva']);
+  const { recipes } = useRecipeContext();
+
+    useFocusEffect(
+    useCallback(() => {
+      setTitle('');
+      setDescription('');
+      setImageUri(null);
+    }, [])
+  );
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Permiso requerido para acceder a la galería');
-      return;
-    }
+    if (status !== 'granted') return;
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -26,29 +36,50 @@ export default function Index() {
     }
   };
 
+  const handleNext = () => {
+    if (!title || !description) {
+      alert('Completa todos los campos');
+      return;
+    }
+
+    router.push({
+      pathname: '/createrecipe/ingredients',
+      params: { 
+        title, 
+        description, 
+        imageUri: imageUri || '',
+        tags: JSON.stringify(tags) 
+      },
+    });
+  };
+
   return (
-    <View className="flex-1 bg-white px-6 py-10">
+    <View className="flex-1 bg-white px-6 pt-12">
       <Text className="text-xl font-bold mb-6 text-center">¡Agrega una receta!</Text>
 
-      <Text className="font-semibold text-[#1C1B1F] mb-1">Nombre del plato</Text>
+      <Text className="font-semibold mb-1">Nombre del plato</Text>
       <TextInput
         className="border border-[#9D5C63] rounded-md px-4 py-2 mb-4"
         placeholder="Ej: Tacos al pastor"
+        value={title}
+        onChangeText={setTitle}
       />
 
-      <Text className="font-semibold text-[#1C1B1F] mb-1">Descripción del plato</Text>
+      <Text className="font-semibold mb-1">Descripción</Text>
       <TextInput
         className="border border-[#9D5C63] rounded-md px-4 py-2 mb-4"
         placeholder="Describe tu plato"
+        value={description}
+        onChangeText={setDescription}
       />
 
-      <Text className="text-[#1C1B1F] font-bold mb-2">Imagen del Plato</Text>
+      <Text className="font-bold mb-2">Imagen del Plato</Text>
       <TouchableOpacity
         onPress={pickImage}
         className="bg-gray-200 rounded-md h-32 justify-center items-center mb-4"
       >
         {imageUri ? (
-          <Image source={{ uri: imageUri }} className="w-full h-32 rounded-md" resizeMode="cover" />
+          <Image source={{ uri: imageUri }} className="w-full h-32 rounded-md" />
         ) : (
           <>
             <Text className="text-gray-500 text-lg">⬆️</Text>
@@ -57,30 +88,8 @@ export default function Index() {
         )}
       </TouchableOpacity>
 
-      <View className="flex-row items-center mb-3">
-        <Switch
-          value={commentsEnabled}
-          onValueChange={setCommentsEnabled}
-          thumbColor="#4C2C2F"
-          trackColor={{ false: '#B3777D', true: '#9D5C63' }}
-          style={{ width: 52, height: 32 }}
-        />
-        <Text className="ml-2 font-bold text-[#1C1B1F]">Autorizar comentarios</Text>
-      </View>
-
-      <View className="flex-row items-center mb-6">
-        <Switch
-          value={wifiOnly}
-          onValueChange={setWifiOnly}
-          thumbColor="#4C2C2F"
-          trackColor={{ false: '#B3777D', true: '#9D5C63' }}
-          style={{ width: 52, height: 32 }}
-        />
-        <Text className="ml-2 font-bold text-[#1C1B1F]">Publicar Solo WIFI</Text>
-      </View>
-
       <TouchableOpacity
-        onPress={() => router.push('../createrecipe/ingredients')}
+        onPress={handleNext}
         className="bg-[#9D5C63] rounded-xl w-40 mx-auto py-2"
       >
         <Text className="text-white font-bold text-center">Siguiente</Text>
