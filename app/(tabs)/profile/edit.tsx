@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const EditProfileScreen = () => {
   const router = useRouter();
-
+  
   const { user, updateUser } = useAuth();
   const [newUsername, setNewUsername] = useState(user?.username || '');
   const [newEmail, setNewEmail] = useState(user?.email || '');
@@ -20,7 +20,7 @@ const EditProfileScreen = () => {
   const [showSavedMessage, setShowSavedMessage] = useState(false);
 
   // Cargar datos existentes al entrar
-  useEffect(() => {
+/*   useEffect(() => {
     const loadData = async () => {
       try {
         const data = await AsyncStorage.getItem('profileData');
@@ -28,25 +28,20 @@ const EditProfileScreen = () => {
           const { username, email, image } = JSON.parse(data);
           setNewUsername(username || '');
           setNewEmail(email || '');
-          if (image) setNewImage({ uri: image });
+          
         }
       } catch (error) {
         console.error('Error cargando datos:', error);
       }
     };
     loadData();
-  }, []);
+  }, []); */
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
-  };
-
-  const validateEmail = (email: string) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
   };
 
   const validateEmail = (email: string) => {
