@@ -1,21 +1,15 @@
-import { FlatList, Image, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { FlatList, Image, Text, TouchableOpacity, View, ScrollView, SafeAreaView } from 'react-native';
 import React, { useState } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import SearchBar from '../../components/SearchBar';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import RecipeCard from '../../components/RecipeCard';
 import Tags from '../../components/Tags';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../context/AuthContext';
+import { useRecipeContext } from '../context/RecipeContext';
 
-type Category = {
-  category: string;
-  title: string;
-};
-
-
-const tags: Category[] = [
+const tags = [
   { category: 'Todos', title: 'Todos' },
   { category: 'Mexicana', title: 'Mexicana' },
   { category: 'Argentina', title: 'Argentina' },
@@ -23,32 +17,41 @@ const tags: Category[] = [
   { category: 'Vegana', title: 'Vegana' },
 ];
 
-const recipes = [
+const sampleRecipes = [
   {
+    id: '1',
     image: require('../../assets/descarga_1.jpg'),
-    title: 'Lorem ipsum',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc dapibus mauris ut sagittis lobortis.',
-    tags: ['Mexicana', 'Saludable', 'Vegana'],
+    title: 'Tacos al Pastor',
+    description: 'Deliciosos tacos con carne marinada y piña',
+    tags: ['Mexicana', 'Popular'],
   },
   {
+    id: '2',
     image: require('../../assets/descarga_2.jpg'),
-    title: 'Lorem ipsum',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc dapibus mauris ut sagittis lobortis.',
-    tags: ['Mexicana', 'Saludable', 'Vegana'],
-  },
-  {
-    image: require('../../assets/descarga_3.jpg'),
-    title: 'Lorem ipsum',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc dapibus mauris ut sagittis lobortis.',
-    tags: ['Mexicana', 'Saludable', 'Vegana'],
+    title: 'Empanadas Argentinas',
+    description: 'Masa casera rellena de carne cortada a cuchillo',
+    tags: ['Argentina', 'Carne'],
   },
 ];
 
-const index = () => {
+const Index = () => {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
   const [selectedTag, setSelectedTag] = useState('Todos');
   const { user } = useAuth();
+  const { recipes } = useRecipeContext();
+
+  // Combinar recetas creadas con las de muestra
+  const allRecipes = [
+    ...recipes.map(r => ({
+      id: r.id,
+      image: { uri: r.imageUri },
+      title: r.title,
+      description: r.description,
+      tags: r.tags,
+    })),
+    ...sampleRecipes
+  ];
 
   return (
     <SafeAreaView className='h-full bg-colorfondo'>
@@ -74,35 +77,39 @@ const index = () => {
           </View>
         </View>
 
-        {/* FlatList*/}
+        {/* FlatList */}
         <FlatList
-          data={recipes}
-          keyExtractor={(_, i) => i.toString()}
+          data={allRecipes}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
           ListHeaderComponent={
             <>
-            {/* Recetas de la semana */}
-            <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+              <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
                 <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-                <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-                <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-            </ScrollView>
+                <Image source={require('../../assets/descarga_2.jpg')} className="w-32 h-24 rounded-xl mr-2" />
+                <Image source={require('../../assets/descarga_3.jpg')} className="w-32 h-24 rounded-xl mr-2" />
+              </ScrollView>
 
-            {/* Filtros */}
-            <Tags categories={tags}/>
+              <Tags categories={tags}/>
             </>
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push('/recipes/recipeslog')}>
-            <RecipeCard
-              imgsrc={item.image}
-              title={item.title}
-              description={item.description}
-              tags={item.tags}
-            />
-          </TouchableOpacity>
-        )}
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity 
+              onPress={() => router.push({
+                pathname: '/recipes/[id]',
+                params: { id: item.id }
+              })}
+              className="mb-4"
+            >
+              <RecipeCard
+                imgsrc={item.image}
+                title={item.title}
+                description={item.description}
+                tags={item.tags}
+              />
+            </TouchableOpacity>
+          )}
         />
 
         {!user && (
@@ -121,4 +128,4 @@ const index = () => {
   );
 };
 
-export default index;
+export default Index;
