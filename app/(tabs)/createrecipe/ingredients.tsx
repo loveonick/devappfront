@@ -1,111 +1,105 @@
-import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router'; 
+import React, { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+
+interface Ingredient {
+  name: string;
+  quantity: string;
+  unit: string;
+}
 
 export default function Ingredients() {
-  const [ingredients, setIngredients] = useState([{ 
-    id: 1, 
+  const params = useLocalSearchParams();
+  const router = useRouter();
+  const [ingredients, setIngredients] = useState<Ingredient[]>([{ 
     name: '', 
     quantity: '', 
     unit: '' 
   }]);
-  const router = useRouter(); 
 
   const addIngredient = () => {
-    setIngredients([...ingredients, { 
-      id: Date.now(), 
-      name: '', 
-      quantity: '', 
-      unit: '' 
-    }]);
+    setIngredients([...ingredients, { name: '', quantity: '', unit: '' }]);
   };
 
-  const removeIngredient = (id) => {
-    if (ingredients.length > 1) {
-      setIngredients(ingredients.filter(item => item.id !== id));
-    }
+  const removeIngredient = (index: number) => {
+    if (ingredients.length <= 1) return;
+    setIngredients(ingredients.filter((_, i) => i !== index));
   };
 
-  const updateIngredientField = (id, field, value) => {
-    setIngredients(
-      ingredients.map(item => 
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
+  const updateIngredient = (index: number, field: keyof Ingredient, value: string) => {
+    const newIngredients = [...ingredients];
+    newIngredients[index][field] = value;
+    setIngredients(newIngredients);
+  };
+
+  const handleContinue = () => {
+    router.push({
+      pathname: '/createrecipe/newProcedure',
+      params: {
+        ...params,
+        ingredients: JSON.stringify(ingredients),
+      },
+    });
   };
 
   return (
     <View className="flex-1 bg-white px-6 pt-12">
-      <Text className="text-[#1C1B1F] text-xl font-bold mb-6 text-center">
-        ¿Qué ingrediente necesita?
-      </Text>
+      <TouchableOpacity 
+        onPress={() => router.back()}
+        className="absolute top-12 left-6 z-10"
+      >
+        <Ionicons name="arrow-back" size={24} color="#9D5C63" />
+      </TouchableOpacity>
 
-      {/* Encabezado de la lista de ingredientes */}
-      <View className="flex-row justify-between items-center bg-gray-100 px-4 py-3 rounded-md mb-4">
-        <Text className="text-[#1C1B1F] font-semibold flex-1">Ingrediente</Text>
-        <Text className="text-[#1C1B1F] font-semibold px-1">Cantidad</Text>
-        <Text className="text-[#1C1B1F] font-semibold px-2">Unidad</Text>
-      </View>
+      <Text className="text-xl font-bold mb-6 text-center">Ingredientes</Text>
 
-      {/* Lista de ingredientes */}
       {ingredients.map((item, index) => (
-        <View key={item.id} className="flex-row items-center mb-3">
-          {/* Campo Ingrediente */}
+        <View key={index} className="flex-row mb-3">
           <TextInput
-            placeholder="Agua"
-            placeholderTextColor="#9CA3AF"
-            className="bg-gray-100 rounded-md flex-1 px-4 py-2 mr-2"
+            placeholder="Ingrediente"
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 mr-2"
             value={item.name}
-            onChangeText={(text) => updateIngredientField(item.id, 'name', text)}
+            onChangeText={(text) => updateIngredient(index, 'name', text)}
           />
-          
-          {/* Campo Cantidad */}
           <TextInput
-            placeholder="100"
-            placeholderTextColor="#9CA3AF"
-            className="bg-gray-100 rounded-md w-20 px-2 py-2 mr-2 text-center"
+            placeholder="Cant"
+            className="w-20 border border-gray-300 rounded-md px-3 py-2 mr-2"
             value={item.quantity}
-            onChangeText={(text) => updateIngredientField(item.id, 'quantity', text)}
+            onChangeText={(text) => updateIngredient(index, 'quantity', text)}
             keyboardType="numeric"
           />
-          
-          {/* Campo Unidad */}
           <TextInput
-            placeholder="ml"
-            placeholderTextColor="#9CA3AF"
-            className="bg-gray-100 rounded-md w-16 px-2 py-2 mr-2 text-center"
+            placeholder="Unidad"
+            className="w-16 border border-gray-300 rounded-md px-3 py-2 mr-2"
             value={item.unit}
-            onChangeText={(text) => updateIngredientField(item.id, 'unit', text)}
+            onChangeText={(text) => updateIngredient(index, 'unit', text)}
           />
-          
-          {/* Botones */}
-          {index === ingredients.length - 1 ? (
-            <TouchableOpacity 
-              onPress={addIngredient}
-              className="w-8 h-8 items-center justify-center"
+          {ingredients.length > 1 && (
+            <TouchableOpacity
+              onPress={() => removeIngredient(index)}
+              className="justify-center"
             >
-              <Text className="text-2xl text-[#1C1B1F] font-bold">+</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity 
-              onPress={() => removeIngredient(item.id)}
-              className="w-8 h-8 items-center justify-center"
-            >
-              <Text className="text-2xl text-[#1C1B1F] font-bold">−</Text>
+              <Ionicons name="trash" size={20} color="#9D5C63" />
             </TouchableOpacity>
           )}
         </View>
       ))}
 
-      {/* Botón continuar */}
-      <View className="items-center mt-6">
-        <TouchableOpacity
-          onPress={() => router.push('../createrecipe/newProcedure')}
-          className="bg-[#9D5C63] px-8 py-3 rounded-full"
-        >
-          <Text className="text-white font-bold text-base">Continuar</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        onPress={addIngredient}
+        className="flex-row items-center mb-6"
+      >
+        <Ionicons name="add-circle" size={24} color="#9D5C63" />
+        <Text className="ml-2 text-[#9D5C63]">Agregar ingrediente</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={handleContinue}
+        className="bg-[#9D5C63] rounded-full px-8 py-3 self-center"
+      >
+        <Text className="text-white font-bold">Continuar</Text>
+      </TouchableOpacity>
     </View>
   );
 }

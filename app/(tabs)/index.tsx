@@ -1,57 +1,61 @@
-import { FlatList, Image, Text, TouchableOpacity, View, ScrollView } from 'react-native';
-import React, { useState } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { FlatList, Image, Text, TouchableOpacity, View, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import SearchBar from '../../components/SearchBar';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import RecipeCard from '../../components/RecipeCard';
+import RecipeWeek from '../../components/RecipeWeek';
 import Tags from '../../components/Tags';
+
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../context/AuthContext';
+import { getRecipes } from '../api/recipe_api';
 
-type Category = {
-  category: string;
-  title: string;
-};
-
-
-const tags: Category[] = [
-  { category: 'Todos', title: 'Todos' },
-  { category: 'Mexicana', title: 'Mexicana' },
-  { category: 'Argentina', title: 'Argentina' },
-  { category: 'Saludable', title: 'Saludable' },
-  { category: 'Vegana', title: 'Vegana' },
+const dishTypes = [
+  'Todos',
+  'Entrada',
+  'Principal',
+  'Postre',
+  'Aperitivo',
+  'Bebida',
+  'Snack',
 ];
 
-const recipes = [
-  {
-    image: require('../../assets/descarga_1.jpg'),
-    title: 'Lorem ipsum',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc dapibus mauris ut sagittis lobortis.',
-    tags: ['Mexicana', 'Saludable', 'Vegana'],
-  },
-  {
-    image: require('../../assets/descarga_2.jpg'),
-    title: 'Lorem ipsum',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc dapibus mauris ut sagittis lobortis.',
-    tags: ['Mexicana', 'Saludable', 'Vegana'],
-  },
-  {
-    image: require('../../assets/descarga_3.jpg'),
-    title: 'Lorem ipsum',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc dapibus mauris ut sagittis lobortis.',
-    tags: ['Mexicana', 'Saludable', 'Vegana'],
-  },
-];
-
-const index = () => {
+const Index = () => {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
-  const [selectedTag, setSelectedTag] = useState('Todos');
+  const [selectedDishType, setSelectedDishType] = useState('Todos');
   const { user } = useAuth();
 
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Traer recetas al montar
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getRecipes();
+        setRecipes(data.recipes || []);
+      } catch (err) {
+        console.error('Error al cargar recetas:', err);
+        setRecipes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Filtrar recetas por búsqueda y tipo de plato
+  const filteredRecipes = recipes.filter((r) => {
+    const matchSearch = r.name.toLowerCase().includes(searchText.toLowerCase());
+    const matchDishType =
+      selectedDishType === 'Todos' || (r.tags && r.tags.includes(selectedDishType));
+    return matchSearch && matchDishType;
+  });
+
   return (
-    <SafeAreaView className='h-full bg-colorfondo'>
+    <SafeAreaView className="h-full bg-colorfondo">
       <View className="flex-1 mt-7 bg-white">
         {/* Header */}
         <View className="flex-row items-center justify-between px-4 bg-colorfondo">
@@ -77,37 +81,68 @@ const index = () => {
           </View>
         </View>
 
-        {/* FlatList*/}
+        {/* Lista de recetas */}
         <FlatList
-          data={recipes}
-          keyExtractor={(_, i) => i.toString()}
-          contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
+          data={filteredRecipes}
+          keyExtractor={(item) => item._id.toString()}
+          contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16, flexGrow: 1 }}
           ListHeaderComponent={
             <>
-            {/* Recetas de la semana */}
-            <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-                <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-                <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-                <Image source={require('../../assets/descarga_1.jpg')} className="w-32 h-24 rounded-xl mr-2" />
-            </ScrollView>
+              <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
 
-            {/* Filtros */}
-            <Tags categories={tags}/>
+              {filteredRecipes.length === 0 && !loading ? (
+                <Text className="text-gray-500 mb-4">No hay recetas para mostrar</Text>
+              ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 space-x-2">
+                  {filteredRecipes.slice(0, 3).map((recipe) => (
+                    <RecipeWeek
+                      key={recipe._id}
+                      imgsrc={{ uri: recipe.image }}
+                      title={recipe.name}
+                    />
+                  ))}
+                </ScrollView>
+              )}
+              <Tags
+                dishTypes={dishTypes}
+                selectedDishType={selectedDishType}
+                onSelectDishType={setSelectedDishType}
+              />
             </>
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push('/recipes/recipeslog')}>
-            <RecipeCard
-              imgsrc={item.image}
-              title={item.title}
-              description={item.description}
-              tags={item.tags}
-            />
-          </TouchableOpacity>
-        )}
+          }
+          ListEmptyComponent={
+            
+            <View className="flex-1 justify-center items-center mt-10">
+              {loading ? (
+                <ActivityIndicator size="large" color="#6B0A1D" />
+              ) : (
+                <Text className="text-gray-500">No se encontraron recetas</Text>
+              )}
+            </View>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/recipes/[id]',
+                  params: { id: item._id },
+                })
+              }
+              className="mb-4"
+            >
+              <RecipeCard
+                imgsrc={{ uri: item.image }}
+                title={item.name}
+                description={item.description}
+                tags={item.tags}
+                author={item.author}
+                date={item.createdAt}
+              />
+            </TouchableOpacity>
+          )}
         />
 
+        {/* Footer solo si no está logueado */}
         {!user && (
           <View className="absolute bottom-0 left-0 right-0 bg-colorboton p-4 flex-row items-center justify-between">
             <Text className="text-sm font-semibold text-white">¿Todavía no tienes cuenta? ¡Únete!</Text>
@@ -124,4 +159,4 @@ const index = () => {
   );
 };
 
-export default index;
+export default Index;
