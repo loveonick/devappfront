@@ -7,10 +7,12 @@ interface Props {
     title: string;
     description: string;
     tags: string[];
+    author:string;
+    date: string;
 
 }
 
-const RecipeCard = ({imgsrc,title,description,tags}:Props) => {
+const RecipeCard = ({imgsrc,title,description,tags,author,date}:Props) => {
   return (
     <View className="flex-row mb-4 bg-white rounded-xl shadow p-2">
         <Image source={imgsrc} className="w-24 h-24 rounded-xl mr-2" />
@@ -22,6 +24,8 @@ const RecipeCard = ({imgsrc,title,description,tags}:Props) => {
             </TouchableOpacity>
         </View>
         <Text className="text-xs text-gray-600 mb-2">{description}</Text>
+        <Text className="text-xs text-gray-500 mb-1">Por: {author}</Text>
+        <Text className="text-xs text-gray-500 mb-2">Fecha: {new Date(date).toLocaleDateString()}</Text>
         <View className="flex-row flex-wrap">
             {tags.map((tag, j) => (
             <Text key={j} className="text-xs bg-colortag text-white px-2 py-1 rounded-full mr-1 mb-1">
