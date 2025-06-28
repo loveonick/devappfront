@@ -5,45 +5,54 @@ import { useRouter } from 'expo-router';
 
 import RecipeCard from '../../components/RecipeCard';
 import RecipeWeek from '../../components/RecipeWeek';
-
 import Tags from '../../components/Tags';
+
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../context/AuthContext';
 import { getRecipes } from '../api/recipe_api';
 
-const tags = [
-  { category: 'Todos', title: 'Todos' },
-  { category: 'Mexicana', title: 'Mexicana' },
-  { category: 'Argentina', title: 'Argentina' },
-  { category: 'Saludable', title: 'Saludable' },
-  { category: 'Vegana', title: 'Vegana' },
+const dishTypes = [
+  'Todos',
+  'Entrada',
+  'Principal',
+  'Postre',
+  'Aperitivo',
+  'Bebida',
+  'Snack',
 ];
 
 const Index = () => {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
-  const [selectedTag, setSelectedTag] = useState('Todos');
+  const [selectedDishType, setSelectedDishType] = useState('Todos');
   const { user } = useAuth();
 
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch recipes al montar el componente
+  // Traer recetas al montar
   useEffect(() => {
     const fetchData = async () => {
       try {
         const data = await getRecipes();
-        console.log('Recetas recibidas:', data)
         setRecipes(data.recipes || []);
       } catch (err) {
         console.error('Error al cargar recetas:', err);
-        setRecipes([]); // por si falla
+        setRecipes([]);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  // Filtrar recetas por búsqueda y tipo de plato
+  const filteredRecipes = recipes.filter((r) => {
+    const matchSearch = r.name.toLowerCase().includes(searchText.toLowerCase());
+    const matchDishType =
+      selectedDishType === 'Todos' || (r.tags && r.tags.includes(selectedDishType));
+    return matchSearch && matchDishType;
+  });
 
   return (
     <SafeAreaView className="h-full bg-colorfondo">
@@ -59,8 +68,8 @@ const Index = () => {
             <TouchableOpacity onPress={() => router.push('/search')}>
               <SearchBar
                 placeholder="Buscar recetas..."
-                value={searchText}
-                onChangeText={setSearchText}
+                value=""
+                onChangeText={() => {}}
               />
             </TouchableOpacity>
           </View>
@@ -69,20 +78,20 @@ const Index = () => {
           </View>
         </View>
 
-        {/* Lista de Recetas */}
+        {/* Lista de recetas */}
         <FlatList
-          data={recipes}
+          data={filteredRecipes}
           keyExtractor={(item) => item._id.toString()}
           contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16, flexGrow: 1 }}
           ListHeaderComponent={
             <>
               <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
 
-              {recipes.length === 0 && !loading ? (
+              {filteredRecipes.length === 0 && !loading ? (
                 <Text className="text-gray-500 mb-4">No hay recetas para mostrar</Text>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 space-x-2">
-                  {recipes.slice(0, 3).map((recipe) => (
+                  {filteredRecipes.slice(0, 3).map((recipe) => (
                     <RecipeWeek
                       key={recipe._id}
                       imgsrc={{ uri: recipe.image }}
@@ -91,11 +100,15 @@ const Index = () => {
                   ))}
                 </ScrollView>
               )}
-
-              <Tags categories={tags} />
+              <Tags
+                dishTypes={dishTypes}
+                selectedDishType={selectedDishType}
+                onSelectDishType={setSelectedDishType}
+              />
             </>
           }
           ListEmptyComponent={
+            
             <View className="flex-1 justify-center items-center mt-10">
               {loading ? (
                 <ActivityIndicator size="large" color="#6B0A1D" />
@@ -109,7 +122,7 @@ const Index = () => {
               onPress={() =>
                 router.push({
                   pathname: '/recipes/[id]',
-                  params: { id: item.id },
+                  params: { id: item._id },
                 })
               }
               className="mb-4"

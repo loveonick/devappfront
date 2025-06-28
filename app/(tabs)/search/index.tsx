@@ -5,7 +5,6 @@ import {
   FlatList,
   TouchableOpacity,
   Modal,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecipeCard from '../../../components/RecipeCard';
@@ -14,7 +13,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Checkbox from 'expo-checkbox';
 
-const allTags = ['Italian', 'Pasta', 'Indian', 'Spicy'];
+const dishTypes = [
+  'Entrada',
+  'Principal',
+  'Postre',
+  'Aperitivo',
+  'Bebida',
+  'Snack',
+];
 
 const recipes = [
   {
@@ -43,7 +49,7 @@ const Buscar = () => {
   const [sortOrder, setSortOrder] = useState<'alphabetical' | 'recent'>('alphabetical');
   const [tagFilters, setTagFilters] = useState<Record<string, TagFilterState>>(() => {
     const initial: Record<string, TagFilterState> = {};
-    allTags.forEach((t) => (initial[t] = 'none'));
+    dishTypes.forEach((t) => (initial[t] = 'none'));
     return initial;
   });
 
@@ -182,7 +188,7 @@ const Buscar = () => {
           </View>
           <Text className="text-2xl font-bold mb-6">Filtrar por tags</Text>
 
-          {allTags.map((tag) => {
+          {dishTypes.map((tag) => {
             const state = tagFilters[tag];
             let color = 'gray';
             let label = 'No usar';
