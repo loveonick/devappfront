@@ -10,8 +10,7 @@ module.exports = {
       colors:{
         colorboton: '#9D5C63',
         colorfondo : '#FEF5EF',
-        colortag: '#6B0A1D',
-        
+        colortag: '#6B0A1D'
       },
        fontFamily: {
       sans: ['Jost', 'System'],

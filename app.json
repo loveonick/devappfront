@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ProjectApp1",
-    "slug": "ProjectApp1",
+    "name": "CookingBook",
+    "slug": "CookingBook",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
