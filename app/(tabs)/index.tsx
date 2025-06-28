@@ -33,7 +33,8 @@ const Index = () => {
     const fetchData = async () => {
       try {
         const data = await getRecipes();
-        setRecipes(data);
+        console.log('Recetas recibidas:', data)
+        setRecipes(data.recipes || []);
       } catch (err) {
         console.error('Error al cargar recetas:', err);
         setRecipes([]); // por si falla
@@ -71,7 +72,7 @@ const Index = () => {
         {/* Lista de Recetas */}
         <FlatList
           data={recipes}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item._id.toString()}
           contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16, flexGrow: 1 }}
           ListHeaderComponent={
             <>
@@ -83,9 +84,9 @@ const Index = () => {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 space-x-2">
                   {recipes.slice(0, 3).map((recipe) => (
                     <RecipeWeek
-                      key={recipe.id}
-                      imgsrc={{ uri: recipe.imageUri }}
-                      title={recipe.title}
+                      key={recipe._id}
+                      imgsrc={{ uri: recipe.image }}
+                      title={recipe.name}
                     />
                   ))}
                 </ScrollView>
@@ -114,12 +115,12 @@ const Index = () => {
               className="mb-4"
             >
               <RecipeCard
-                imgsrc={{ uri: item.imageUri }}
-                title={item.title}
+                imgsrc={{ uri: item.image }}
+                title={item.name}
                 description={item.description}
                 tags={item.tags}
                 author={item.author}
-                date={item.date}
+                date={item.createdAt}
               />
             </TouchableOpacity>
           )}
