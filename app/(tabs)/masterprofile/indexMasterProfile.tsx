@@ -54,7 +54,7 @@ const MasterProfile = () => {
 
         <View className="mt-20 items-center">
           <TouchableOpacity
-            onPress={() => router.push('/admin/editMaster')}
+            onPress={() => router.push('/profile/edit')}
             className="w-28 h-28 rounded-full bg-gray-300 justify-center items-center mb-6"
           >
             <Ionicons name="person" size={64} color="black" />
@@ -65,7 +65,7 @@ const MasterProfile = () => {
 
           <TouchableOpacity
             className="bg-colorboton px-6 py-3 rounded-md mb-4 w-48 items-center"
-            onPress={() => router.push('/admin/notifications')}
+            onPress={() => router.push('/masterprofile/notifications')}
           >
             <Text className="text-white font-semibold">Notificaciones</Text>
           </TouchableOpacity>
