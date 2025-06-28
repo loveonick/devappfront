@@ -25,7 +25,7 @@ const NotificationsScreen = () => {
   return (
     <ScrollView className="flex-1 bg-white px-4 pt-12" contentContainerStyle={{ paddingBottom: 40 }}>
       {/* Botón atrás */}
-      <TouchableOpacity className="absolute top-10 left-4 z-10" onPress={() => router.back()}>
+      <TouchableOpacity className="absolute top-10 left-4 z-10" onPress={() => router.replace('/masterprofile/indexMasterProfile')}>
         <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
 

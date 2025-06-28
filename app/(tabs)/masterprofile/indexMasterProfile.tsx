@@ -45,7 +45,7 @@ const MasterProfile = () => {
 
 <TouchableOpacity
   className="bg-[#9E5A5A] px-6 py-3 rounded-md mb-4 w-48 items-center"
-  onPress={() => router.push('/admin/notifications')}
+  onPress={() => router.push('/masterprofile/notifications')}
 >
   <Text className="text-white font-semibold">Notificaciones</Text>
 </TouchableOpacity>
