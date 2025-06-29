@@ -23,7 +23,6 @@ const dishTypes = [
 
 const Index = () => {
   const router = useRouter();
-  const [searchText, setSearchText] = useState('');
   const [selectedDishType, setSelectedDishType] = useState('Todos');
   const { user } = useAuth();
 
@@ -48,10 +47,9 @@ const Index = () => {
 
   // Filtrar recetas por búsqueda y tipo de plato
   const filteredRecipes = recipes.filter((r) => {
-    const matchSearch = r.name.toLowerCase().includes(searchText.toLowerCase());
     const matchDishType =
       selectedDishType === 'Todos' || (r.tags && r.tags.includes(selectedDishType));
-    return matchSearch && matchDishType;
+    return matchDishType;
   });
 
   return (
@@ -132,7 +130,7 @@ const Index = () => {
                 title={item.name}
                 description={item.description}
                 tags={item.tags}
-                author={item.author}
+                author={item.author.name}
                 date={item.createdAt}
               />
             </TouchableOpacity>
