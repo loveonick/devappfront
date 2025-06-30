@@ -3,16 +3,19 @@ import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-nat
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
+
+
 
 const LoginScreen = () => {
   const { login, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
+  const router = useRouter();
   // Si ya está logueado, redirigir
   useEffect(() => {
     if (user) {
-      router.replace('/(tabs)');
+      router.replace('/splash/postLoginSplash'); 
     }
   }, [user]);
 
