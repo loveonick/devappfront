@@ -10,6 +10,10 @@ import Tags from '../../components/Tags';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../context/AuthContext';
 import { getRecipes } from '../api/recipe_api';
+import Icon from 'react-native-vector-icons/Ionicons';
+import NetInfo from '@react-native-community/netinfo';
+
+
 
 const dishTypes = [
   'Todos',
@@ -77,7 +81,7 @@ const Index = () => {
             <MaterialIcons name="notifications-none" size={24} color="black" />
           </View>
           <View>
-            <Ionicons name="notifications-outline" size={20} className="ml-4" />
+            <Icon name="notifications-outline" size={20} className="ml-4" />
           </View>
         </View>
 
