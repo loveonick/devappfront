@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { getRecipes } from '../api/recipe_api';
 import Icon from 'react-native-vector-icons/Ionicons';
 import NetInfo from '@react-native-community/netinfo';
-
+import { Alert } from 'react-native';
 
 
 const dishTypes = [
@@ -33,21 +33,61 @@ const Index = () => {
 
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(true); // Nuevo estado para la conexión
 
-  // Traer recetas al montar
+  // Manejar el estado de la conexión y cargar datos
   useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected);
+      if (!state.isConnected) {
+        Alert.alert(
+          'Sin conexión',
+          'No tienes conexión a internet. Algunas funcionalidades estarán limitadas.'
+        );
+      }
+    });
+
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const data = await getRecipes();
-        setRecipes(data.recipes || []);
-      } catch (err) {
-        console.error('Error al cargar recetas:', err);
+        const state = await NetInfo.fetch();
+        setIsConnected(state.isConnected);
+
+        if (state.isConnected) {
+          try {
+            const data = await getRecipes();
+            setRecipes(data.recipes || []);
+          } catch (err) {
+            console.error('Error al cargar recetas:', err);
+            setRecipes([]);
+            Alert.alert('Error', 'No se pudieron cargar las recetas. Inténtalo de nuevo más tarde.');
+          }
+        } else {
+          // Si no hay conexión al inicio, no intentamos cargar recetas y mostramos el mensaje
+          setRecipes([]);
+          Alert.alert(
+            'Sin conexión',
+            'No se puede usar la aplicación sin conexión a internet. Conéctate para acceder a las funcionalidades.'
+          );
+        }
+      } catch (error) {
+        console.error('Error al verificar el estado de la red:', error);
+        setIsConnected(false);
         setRecipes([]);
+        Alert.alert(
+          'Error de red',
+          'Ocurrió un problema al verificar tu conexión a internet.'
+        );
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Filtrar recetas por búsqueda y tipo de plato
@@ -57,6 +97,37 @@ const Index = () => {
       selectedDishType === 'Todos' || (r.tags && r.tags.includes(selectedDishType));
     return matchSearch && matchDishType;
   });
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-colorfondo">
+        <ActivityIndicator size="large" color="#6B0A1D" />
+        <Text className="mt-4 text-gray-700">Cargando...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Si no hay conexión y no hay recetas (lo que indica que no se pudieron cargar)
+  if (!isConnected) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-colorfondo px-4">
+        <Icon name="cloud-offline-outline" size={80} color="#6B0A1D" />
+        <Text className="text-xl font-bold text-center mt-4">
+          ¡Sin conexión a Internet!
+        </Text>
+        <Text className="text-gray-600 text-center mt-2">
+          No podemos mostrar las recetas sin conexión. Por favor, revisa tu conexión e inténtalo de nuevo.
+        </Text>
+        {/* Opcional: Un botón para reintentar la conexión si lo deseas */}
+        {/* <TouchableOpacity
+          className="mt-6 bg-colorboton px-6 py-3 rounded-lg"
+          onPress={() => fetchData()} // Tendrías que reestructurar fetchData para que se pueda llamar aquí
+        >
+          <Text className="text-white font-semibold">Reintentar</Text>
+        </TouchableOpacity> */}
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="h-full bg-colorfondo">
@@ -94,7 +165,8 @@ const Index = () => {
             <>
               <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
 
-              {filteredRecipes.length === 0 && !loading ? (
+              {/* Mostrar solo las 3 últimas recetas si hay conexión */}
+              {filteredRecipes.length === 0 && !loading && isConnected ? (
                 <Text className="text-gray-500 mb-4">No hay recetas para mostrar</Text>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 space-x-2">
@@ -115,7 +187,6 @@ const Index = () => {
             </>
           }
           ListEmptyComponent={
-            
             <View className="flex-1 justify-center items-center mt-10">
               {loading ? (
                 <ActivityIndicator size="large" color="#6B0A1D" />
