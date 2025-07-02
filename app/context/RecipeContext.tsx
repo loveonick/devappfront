@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createRecipe } from "../api/recipe_api";
 
 interface Recipe {
   id: string;
@@ -43,13 +44,14 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
   }, [recipes]);
 
-  const addRecipe = async (recipe: Recipe) => {
-    setRecipes(prev => {
-      const newRecipes = [...prev, recipe];
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newRecipes));
-      return newRecipes;
-    });
-  };
+  const addRecipe = async (recipeData) => {
+  try {
+    const response = await createRecipe(recipeData);
+    setRecipes([...recipes, response.recipe]);
+  } catch (error) {
+    throw error;
+  }
+};
 
   const getRecipeById = (id: string) => {
     return recipes.find(r => r.id === id);

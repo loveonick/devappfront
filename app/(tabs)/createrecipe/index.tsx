@@ -37,21 +37,21 @@ export default function Index() {
   };
 
   const handleNext = () => {
-    if (!title || !description) {
-      alert('Completa todos los campos');
-      return;
-    }
+  if (!title || !description) {
+    alert('Completa todos los campos');
+    return;
+  }
 
-    router.push({
-      pathname: '/createrecipe/ingredients',
-      params: { 
-        title, 
-        description, 
-        imageUri: imageUri || '',
-        tags: JSON.stringify(tags) 
-      },
-    });
-  };
+  router.push({
+    pathname: '/createrecipe/ingredients',
+    params: { 
+      title, 
+      description, 
+      imageUri: imageUri || '',
+      tags: JSON.stringify(tags) 
+    },
+  });
+};
 
   return (
     <View className="flex-1 bg-white px-6 pt-12">

@@ -34,14 +34,19 @@ export default function Ingredients() {
   };
 
   const handleContinue = () => {
-    router.push({
-      pathname: '/createrecipe/newProcedure',
-      params: {
-        ...params,
-        ingredients: JSON.stringify(ingredients),
-      },
-    });
-  };
+  const formattedIngredients = ingredients.map(ing => ({
+    name: ing.name,
+    quantity: `${ing.quantity} ${ing.unit}`.trim(), // Ej: "1 taza"
+  }));
+
+  router.push({
+    pathname: '/createrecipe/newProcedure',
+    params: {
+      ...params,
+      ingredients: JSON.stringify(formattedIngredients), // Enviar como JSON
+    },
+  });
+};
 
   return (
     <View className="flex-1 bg-white px-6 pt-12">

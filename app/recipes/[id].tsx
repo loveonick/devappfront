@@ -79,46 +79,37 @@ export default function RecipeDetail() {
   };
 
   useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      const loadRecipe = async () => {
-        try {
-          if (!id) throw new Error('ID de receta no proporcionado');
-          
-          let foundRecipe = getRecipeById(id as string);
-          
-          if (!foundRecipe) {
-            foundRecipe = await loadFromStorage(id as string);
-          }
-
-          if (isActive) {
-            if (!foundRecipe) {
-              throw new Error('Receta no encontrada');
-            }
-            setRecipe(foundRecipe);
-            setError(null);
-          }
-        } catch (err) {
-          console.error('Error al cargar receta:', err);
-          if (isActive) {
-            setError(err.message);
-            setRecipe(null);
-          }
-        } finally {
-          if (isActive) {
-            setLoading(false);
-          }
+  useCallback(() => {
+    const loadRecipe = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:8080/api/recipes/${id}`);
+        if (!response.ok) {
+          throw new Error('Receta no encontrada');
         }
-      };
-
-      loadRecipe();
-
-      return () => {
-        isActive = false;
-      };
-    }, [id])
-  );
+        const data = await response.json();
+        
+        // Asegúrate de que los datos tengan la estructura correcta
+        const formattedRecipe = {
+          ...data.recipe,
+          id: data.recipe._id,
+          imageUri: data.recipe.image,
+          steps: data.recipe.procedures || []
+        };
+        
+        setRecipe(formattedRecipe);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        setRecipe(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadRecipe();
+  }, [id])
+);
 
   if (loading) {
     return (

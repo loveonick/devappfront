@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRecipeContext } from '../../context/RecipeContext';
+import { createRecipe } from "../../api/recipe_api";
 
 interface RecipeStep {
   description: string;
@@ -50,25 +51,47 @@ export default function NewProcedureScreen() {
     return;
   }
 
-  const newRecipe = {
-    id: Date.now().toString(),
-    title: params.title as string,
-    description: params.description as string,
-    imageUri: params.imageUri as string,
-    ingredients: JSON.parse(params.ingredients as string),
-    steps: steps.filter(step => step.description),
-    tags: JSON.parse(params.tags as string),
-  };
-
   try {
-    await addRecipe(newRecipe);
+    // 1. Preparar FormData
+    const formData = new FormData();
+    formData.append('name', params.title as string);
+    formData.append('description', params.description as string);
+    formData.append('tags', params.tags as string);
+    formData.append('ingredients', params.ingredients as string);
+    formData.append('procedures', JSON.stringify(steps));
+
+    // 2. Agregar imagen (si existe)
+    if (params.imageUri) {
+      const image = {
+        uri: params.imageUri as string,
+        type: 'image/jpeg',
+        name: 'recipe.jpg',
+      };
+      formData.append('media', image as any);
+    }
+
+    // 3. Enviar al backend
+    const response = await fetch('http://localhost:8081/api/recipes', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al crear la receta');
+    }
+
+    const data = await response.json();
+    
+    // 4. Redirigir con el ID de la receta creada
     router.push({
       pathname: '/createrecipe/released',
-      params: { id: newRecipe.id }
+      params: { id: data.recipe._id } // Asegúrate de que el backend devuelva { recipe: { _id: ... } }
     });
+
   } catch (error) {
-    console.error('Error saving recipe:', error);
-    alert('Error al guardar la receta');
+    console.error('Error en handleFinish:', error);
+    alert(error.message || 'Error al guardar la receta');
   }
 };
 
