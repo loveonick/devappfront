@@ -1,24 +1,36 @@
 import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useState, useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useRecipeContext } from '../../context/RecipeContext';
-import { useCallback } from 'react';
-import { useFocusEffect } from 'expo-router';
+
+const DISH_TYPES = [
+  "Entrada",
+  "Plato principal",
+  "Guarnición",
+  "Postre",
+  "Bebida",
+  "Ensalada",
+  "Sopa",
+  "Snack",
+  "Desayuno"
+];
 
 export default function Index() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [tags] = useState<string[]>(['Nueva']);
-  const { recipes } = useRecipeContext();
+  
+  const [type, setType] = useState<string>('');
+  const { updateDraft } = useRecipeContext();
 
-    useFocusEffect(
+  useFocusEffect(
     useCallback(() => {
       setTitle('');
       setDescription('');
       setImageUri(null);
+      setType('');
     }, [])
   );
 
@@ -37,21 +49,15 @@ export default function Index() {
   };
 
   const handleNext = () => {
-  if (!title || !description) {
-    alert('Completa todos los campos');
-    return;
-  }
+    if (!title || !description) {
+      alert('Completa todos los campos');
+      return;
+    }
+    const tags = type ? [type] : [];
+    updateDraft({ title, description, imageUri, type, tags });
 
-  router.push({
-    pathname: '/createrecipe/ingredients',
-    params: { 
-      title, 
-      description, 
-      imageUri: imageUri || '',
-      tags: JSON.stringify(tags) 
-    },
-  });
-};
+    router.push('/createrecipe/ingredients',);
+  };
 
   return (
     <View className="flex-1 bg-white px-6 pt-12">
@@ -72,6 +78,23 @@ export default function Index() {
         value={description}
         onChangeText={setDescription}
       />
+
+      <Text className="font-bold mb-2">Tipo de plato</Text>
+      <View className="flex-row flex-wrap mb-4">
+        {DISH_TYPES.map((item) => (
+          <TouchableOpacity
+            key={item}
+            onPress={() => setType(item)}
+            className={`px-4 py-2 mr-2 mb-2 rounded-full border ${
+              type === item ? 'bg-[#9D5C63] border-[#9D5C63]' : 'border-gray-400'
+            }`}
+          >
+            <Text className={type === item ? 'text-white' : 'text-black'}>
+              {item}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <Text className="font-bold mb-2">Imagen del Plato</Text>
       <TouchableOpacity

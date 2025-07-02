@@ -13,13 +13,15 @@ import { getRecipes } from '../api/recipe_api';
 import { useRecipeContext } from '../context/RecipeContext';
 
 const dishTypes = [
-  'Todos',
-  'Entrada',
-  'Principal',
-  'Postre',
-  'Aperitivo',
-  'Bebida',
-  'Snack',
+  "Entrada",
+  "Plato principal",
+  "Guarnición",
+  "Postre",
+  "Bebida",
+  "Ensalada",
+  "Sopa",
+  "Snack",
+  "Desayuno"
 ];
 
 const Index = () => {

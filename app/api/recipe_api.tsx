@@ -79,11 +79,11 @@ export const getRecipeById = async (id) => {
 
 export const createRecipe = async (recipeData: FormData) => {
   try {
-    const response = await fetch(`${url}/recipes`, {
-      method: 'POST',
-      body: recipeData, // No agregues headers Content-Type para FormData
-    });
-    
+    const requestOptions = {
+      method: "POST",
+      body: recipeData,
+    };
+    const response = await fetch(`${url}/recipes`, requestOptions);
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Error al crear la receta');

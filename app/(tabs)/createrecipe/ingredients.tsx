@@ -1,7 +1,8 @@
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import React, { useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useRecipeContext } from '../../context/RecipeContext';
 
 interface Ingredient {
   name: string;
@@ -10,8 +11,8 @@ interface Ingredient {
 }
 
 export default function Ingredients() {
-  const params = useLocalSearchParams();
   const router = useRouter();
+  const { updateDraft, draft } = useRecipeContext();
   const [ingredients, setIngredients] = useState<Ingredient[]>([{ 
     name: '', 
     quantity: '', 
@@ -34,19 +35,15 @@ export default function Ingredients() {
   };
 
   const handleContinue = () => {
-  const formattedIngredients = ingredients.map(ing => ({
-    name: ing.name,
-    quantity: `${ing.quantity} ${ing.unit}`.trim(), // Ej: "1 taza"
-  }));
-
-  router.push({
-    pathname: '/createrecipe/newProcedure',
-    params: {
-      ...params,
-      ingredients: JSON.stringify(formattedIngredients), // Enviar como JSON
-    },
-  });
-};
+    const ingredientNames = ingredients.map(i => i.name).filter(name => name.trim() !== '');
+    const newTags = Array.from(new Set([...(draft.tags ?? []), ...ingredientNames]));
+    updateDraft({
+      ...draft,
+      ingredients,
+      tags: newTags,
+    });
+    router.push('/createrecipe/newProcedure');
+  };
 
   return (
     <View className="flex-1 bg-white px-6 pt-12">

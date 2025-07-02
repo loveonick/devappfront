@@ -5,6 +5,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRecipeContext } from '../../context/RecipeContext';
 import { createRecipe } from "../../api/recipe_api";
+import { addIngredient } from "../../api/ingredient_api";
+import {useAuth} from "../../context/AuthContext";
+import {addProcedure} from "../../api/procedure_api";
 
 interface RecipeStep {
   description: string;
@@ -12,10 +15,12 @@ interface RecipeStep {
 }
 
 export default function NewProcedureScreen() {
-  const params = useLocalSearchParams();
   const router = useRouter();
-  const { addRecipe } = useRecipeContext();
-  const [steps, setSteps] = useState<RecipeStep[]>([]);
+  const { draft, addRecipe} = useRecipeContext();
+  const { user } = useAuth();
+  console.log(draft);
+
+  const [steps, setSteps] = useState<RecipeStep[]>(draft.steps ?? [{ description: '' }]);
   const [currentStep, setCurrentStep] = useState(1);
 
   const pickImage = async () => {
@@ -46,54 +51,79 @@ export default function NewProcedureScreen() {
   };
 
   const handleFinish = async () => {
-  if (!steps[currentStep - 1]?.description) {
-    alert('Completa el paso actual antes de finalizar');
-    return;
-  }
+    if (!steps[currentStep - 1]?.description) {
+      alert('Completa el paso actual antes de finalizar');
+      return;
+    }
 
-  try {
-    // 1. Preparar FormData
-    const formData = new FormData();
-    formData.append('name', params.title as string);
-    formData.append('description', params.description as string);
-    formData.append('tags', params.tags as string);
-    formData.append('ingredients', params.ingredients as string);
-    formData.append('procedures', JSON.stringify(steps));
+    try {
+      const formData = new FormData();
 
-    // 2. Agregar imagen (si existe)
-    if (params.imageUri) {
-      const image = {
-        uri: params.imageUri as string,
-        type: 'image/jpeg',
-        name: 'recipe.jpg',
+      // Tomar ingredientes, tags, tipo, etc, desde el draft:
+      const ingredientIds: string[] = [];
+      const procedureIds: string[] = [];
+
+      for (const step of steps) {
+        const savedProcedure = await addProcedure(step);
+        procedureIds.push(savedProcedure._id);
+      }
+      formData.append('procedures', JSON.stringify(procedureIds));
+
+      for (const ingredient of draft.ingredients ?? []) {
+        const savedIngredient = await addIngredient(ingredient);
+        ingredientIds.push(savedIngredient._id);
+      }
+      formData.append('ingredients', JSON.stringify(ingredientIds));
+
+      formData.append('name', draft.title ?? '');
+      formData.append('description', draft.description ?? '');
+
+      formData.append('tags', JSON.stringify(draft.tags ?? []));
+      formData.append('author', user._id);
+
+      formData.append('type', draft.type ?? '');
+
+      if (draft.imageUri) {
+        const image = {
+          uri: draft.imageUri,
+          type: 'image/jpeg',
+          name: 'recipe.jpg',
+        };
+        formData.append('media', image as any);
+      }
+
+      const data = await createRecipe(formData);
+      const newRecipe = {
+          id: data.recipe._id,
+          title: data.recipe.name as string,
+          description: data.recipe.description as string,
+          imageUri: data.recipe.image as string,
+          ingredients: data.recipe.ingredients.map((i: any) => ({
+            name: i.name,
+            quantity: i.amount.toString(), // pasar como string, no número
+            unit: i.unit,
+          })),
+          steps: data.recipe.procedures.map((p: any) => ({
+            description: p.content,
+            imageUri: p.media?.[0], // opcional, puede no existir
+          })),
+          tags: data.recipe.tags || [],
+          date: data.recipe.date || new Date().toISOString(),
+          author: data.recipe.author || 'Desconocido', 
       };
-      formData.append('media', image as any);
+      console.log(newRecipe);
+      await addRecipe(newRecipe);
+
+      router.push({
+        pathname: '/createrecipe/released',
+        params: { id: data.recipe._id }
+      });
+
+    } catch (error) {
+      console.error('Error en handleFinish:', error);
+      alert(error.message || 'Error al guardar la receta');
     }
-
-    // 3. Enviar al backend
-    const response = await fetch('http://localhost:8081/api/recipes', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al crear la receta');
-    }
-
-    const data = await response.json();
-    
-    // 4. Redirigir con el ID de la receta creada
-    router.push({
-      pathname: '/createrecipe/released',
-      params: { id: data.recipe._id } // Asegúrate de que el backend devuelva { recipe: { _id: ... } }
-    });
-
-  } catch (error) {
-    console.error('Error en handleFinish:', error);
-    alert(error.message || 'Error al guardar la receta');
-  }
-};
+  };
 
   useEffect(() => {
     if (steps.length < currentStep) {

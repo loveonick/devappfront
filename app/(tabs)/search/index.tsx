@@ -5,6 +5,7 @@ import {
   FlatList,
   TouchableOpacity,
   Modal,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecipeCard from '../../../components/RecipeCard';
@@ -17,12 +18,15 @@ import { useRouter } from 'expo-router';
 import { useRecipeContext } from '../../context/RecipeContext';
 
 const dishTypes = [
-  'Entrada',
-  'Principal',
-  'Postre',
-  'Aperitivo',
-  'Bebida',
-  'Snack',
+  "Entrada",
+  "Plato principal",
+  "Guarnición",
+  "Postre",
+  "Bebida",
+  "Ensalada",
+  "Sopa",
+  "Snack",
+  "Desayuno"
 ];
 
 type TagFilterState = 'include' | 'exclude' | 'none';
@@ -169,56 +173,58 @@ const Buscar = () => {
 
         {/* Contenedor modal */}
         <View className="absolute left-0 right-0 bottom-0 h-[60%] bg-white rounded-t-2xl p-8 shadow-lg">
-          <View className="mb-6">
-            <Text className="text-lg font-semibold mb-2">Ordenar por:</Text>
-            <TouchableOpacity
-              className="bg-gray-100 px-4 py-2 rounded"
-              onPress={() =>
-                setSortOrder((prev) => (prev === 'alphabetical' ? 'recent' : 'alphabetical'))
-              }
-            >
-              <Text className="text-base">
-                {sortOrder === 'alphabetical' ? 'A-Z (alfabético)' : 'Más recientes primero'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Text className="text-2xl font-bold mb-6">Filtrar por tags</Text>
-
-          {dishTypes.map((tag) => {
-            const state = tagFilters[tag];
-            let color = 'gray';
-            let label = 'No usar';
-            if (state === 'include') {
-              color = '#2563EB'; // azul
-              label = 'Incluir';
-            } else if (state === 'exclude') {
-              color = '#EF4444'; // rojo
-              label = 'Excluir';
-            }
-            return (
+          <ScrollView showsVerticalScrollIndicator={true}>
+            <View className="mb-6">
+              <Text className="text-lg font-semibold mb-2">Ordenar por:</Text>
               <TouchableOpacity
-                key={tag}
-                className="flex-row items-center mb-4"
-                onPress={() => toggleTagState(tag)}
-                style={{ opacity: state === 'none' ? 0.6 : 1 }}
+                className="bg-gray-100 px-4 py-2 rounded"
+                onPress={() =>
+                  setSortOrder((prev) => (prev === 'alphabetical' ? 'recent' : 'alphabetical'))
+                }
               >
-                <Checkbox
-                  value={state !== 'none'}
-                  onValueChange={() => toggleTagState(tag)}
-                  color={color}
-                />
-                <Text className="ml-4 text-lg font-semibold">{tag}</Text>
-                <Text className="ml-2 text-sm font-medium text-gray-500">{label}</Text>
+                <Text className="text-base">
+                  {sortOrder === 'alphabetical' ? 'A-Z (alfabético)' : 'Más recientes primero'}
+                </Text>
               </TouchableOpacity>
-            );
-          })}
+            </View>
+            <Text className="text-2xl font-bold mb-6">Filtrar por tags</Text>
 
-          <TouchableOpacity
-            className="mt-8 bg-blue-600 py-3 rounded-lg"
-            onPress={() => setModalVisible(false)}
-          >
-            <Text className="text-white text-center font-semibold text-lg">Cerrar</Text>
-          </TouchableOpacity>
+            {dishTypes.map((tag) => {
+              const state = tagFilters[tag];
+              let color = 'gray';
+              let label = 'No usar';
+              if (state === 'include') {
+                color = '#2563EB'; // azul
+                label = 'Incluir';
+              } else if (state === 'exclude') {
+                color = '#EF4444'; // rojo
+                label = 'Excluir';
+              }
+              return (
+                <TouchableOpacity
+                  key={tag}
+                  className="flex-row items-center mb-4"
+                  onPress={() => toggleTagState(tag)}
+                  style={{ opacity: state === 'none' ? 0.6 : 1 }}
+                >
+                  <Checkbox
+                    value={state !== 'none'}
+                    onValueChange={() => toggleTagState(tag)}
+                    color={color}
+                  />
+                  <Text className="ml-4 text-lg font-semibold">{tag}</Text>
+                  <Text className="ml-2 text-sm font-medium text-gray-500">{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+
+            <TouchableOpacity
+              className="mt-8 bg-blue-600 py-3 rounded-lg"
+              onPress={() => setModalVisible(false)}
+            >
+              <Text className="text-white text-center font-semibold text-lg">Cerrar</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </Modal>
     </SafeAreaView>
