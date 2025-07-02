@@ -15,69 +15,64 @@ export const getRecipes = async () => {
       throw new Error('Network response was not ok');
     }
     const data = await response.json();
-    return data;
+    //console.log('Fetched recipes:', data);
+    const mappedRecipes = data.recipes.map((r) => ({
+      id: r._id,
+      title: r.name,
+      description: r.description,
+      imageUri: r.image,
+      ingredients: r.ingredients,
+      steps: r.procedures,
+      tags: r.tags,
+      date: r.createdAt,
+      author: r.author?.name ?? 'Desconocido',
+    }));
+    return mappedRecipes;
   } catch (error) {
     console.error('Error fetching recipes:', error);
     throw error;
   }
 }
 
-export const createRecipe = async (recipeData: FormData) => {
-  try {
-    const response = await fetch(`${url}/recipes`, {
-      method: 'POST',
-      body: recipeData, // No agregues headers Content-Type para FormData
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al crear la receta');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating recipe:', error);
-    throw error;
-  }
-};
-
-export const createProcedure = async (procedureData: FormData) => {
-  try {
-    const response = await fetch(`${url}/procedures`, {
-      method: 'POST',
-      body: procedureData,
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating procedure:', error);
-    throw error;
-  }
-};
-
-export const createIngredient = async (ingredientData: {
-  name: string;
-  quantity?: string;
-  unit?: string;
-}) => {
+export const getRecipeById = async (id) => {
   try {
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
 
     const requestOptions = {
-      method: "POST",
+      method: "GET",
       headers: myHeaders,
-      body: JSON.stringify(ingredientData),
     };
 
-    const response = await fetch(`${url}/ingredients`, requestOptions);
-    
+    const response = await fetch(`${url}/recipes/${id}`, requestOptions);
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al crear el ingrediente');
+      throw new Error('Network response was not ok');
     }
 
-    return await response.json();
+    let data = await response.json();
+    data = data.recipe;
+
+    // Mapeo de datos para el front
+    const mapped = {
+      id: data._id,
+      title: data.name,
+      description: data.description,
+      imageUri: data.image,
+      ingredients: data.ingredients?.map(i => ({
+        name: i.name,
+        quantity: parseFloat(i.amount),
+        unit: i.unit,
+      })) || [],
+      steps: data.procedures?.map(p => ({
+        description: p.content,
+        imageUri: p.media[0],
+      })) || [],
+      tags: data.tags || [],
+    };
+
+    return mapped;
   } catch (error) {
-    console.error('Error creating ingredient:', error);
+    console.error('Error fetching recipe by ID:', error);
     throw error;
   }
 };

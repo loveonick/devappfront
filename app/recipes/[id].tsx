@@ -5,6 +5,9 @@ import { useCallback, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import { getRecipeById } from '../api/recipe_api';
+import { getQualificationsByRecipeId, addQualification } from '../api/qualification_api';
+
 interface Recipe {
   id: string;
   title: string;
@@ -23,7 +26,7 @@ interface Comment {
 
 export default function RecipeDetail() {
   const { id } = useLocalSearchParams();
-  const { getRecipeById } = useRecipeContext();
+//  const { getRecipeById } = useRecipeContext();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,55 +64,61 @@ export default function RecipeDetail() {
     ? (userComments.reduce((sum, c) => sum + c.stars, 0) / userComments.length)
     : 0;
 
-  const handleCommentSubmit = () => {
+  const handleCommentSubmit = async () => {
     if (comment.trim() === '' || ratingUser === 0) {
       Alert.alert('Comentario incompleto', 'Por favor escribe un comentario y asigna una calificación.');
       return;
     }
 
-    const newComment = {
-      name: 'Usuario Anónimo',
-      text: comment,
-      stars: ratingUser,
-    };
-
+    const newComment = await addQualification(id as string, {
+      userId: '685dd54ddd26ee167051cb6f', // Dato hardcodeado para probar
+      star: ratingUser,
+      comment: comment,
+    });
     setUserComments([newComment, ...userComments]);
     setComment('');
     setRatingUser(0);
   };
 
   useFocusEffect(
-  useCallback(() => {
-    const loadRecipe = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`http://localhost:8080/api/recipes/${id}`);
-        if (!response.ok) {
-          throw new Error('Receta no encontrada');
+    useCallback(() => {
+      let isActive = true;
+
+      const loadRecipe = async () => {
+        try {
+          if (!id) throw new Error('ID de receta no proporcionado');
+          const recipeFetched = await getRecipeById(id);
+          const qualificationsFetched = await getQualificationsByRecipeId(id);
+
+          if (isActive) {
+            
+            setRecipe(recipeFetched);
+
+            setUserComments(qualificationsFetched.map(q => ({
+              name: q.author.name || 'Anónimo',
+              text: q.content,
+              stars: q.stars,
+            })));
+            setError(null);
+          }
+        } catch (err) {
+          console.error('Error al cargar receta:', err);
+          if (isActive) {
+            setError(err.message);
+            setRecipe(null);
+          }
+        } finally {
+          if (isActive) {
+            setLoading(false);
+          }
         }
-        const data = await response.json();
-        
-        // Asegúrate de que los datos tengan la estructura correcta
-        const formattedRecipe = {
-          ...data.recipe,
-          id: data.recipe._id,
-          imageUri: data.recipe.image,
-          steps: data.recipe.procedures || []
-        };
-        
-        setRecipe(formattedRecipe);
-        setError(null);
-      } catch (err) {
-        setError(err.message);
-        setRecipe(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadRecipe();
-  }, [id])
-);
+      };
+      loadRecipe();
+      return () => {
+        isActive = false;
+      };
+    }, [id])
+  );
 
   if (loading) {
     return (
