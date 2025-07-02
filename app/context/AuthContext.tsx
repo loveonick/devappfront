@@ -3,11 +3,25 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { loginApi } from '../api/auth_api'; 
-import { getFavorites, toggleFavoriteBack } from '../api/user_api';
+import { getFavorites, addFavoriteAPI,removeFavoriteAPI, getUserById } from '../api/user_api';
 
 type User = {
-    username: string;
-    email: string;
+  _id: string;
+  username: string;
+  email: string;
+  favorites: Recipe[]; // <-- ya vienen populadas
+};
+
+type Recipe = {
+  _id: string;
+  title: string;
+  description: string;
+  imageUri: string;
+  ingredients: { name: string; quantity: string; unit: string }[];
+  steps: { description: string; imageUri?: string }[];
+  tags: string[];
+  date: string;
+  author: string;
 };
 
 type AuthContextType = {
@@ -17,7 +31,7 @@ type AuthContextType = {
     logout: () => Promise<void>;
     isLoading: boolean;
     updateUser: (newData: Partial<User>) => Promise<void>;
-    favorites: string[];
+    favorites: Recipe[];
     toggleFavorite: (recipeId: string) => Promise<void>;
     isFavorite: (recipeId: string) => boolean;
 };
@@ -27,13 +41,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true); // true al inicio
-    const [favorites, setFavorites] = useState<string[]>([]);
-
-    // Mover loadFavorites fuera de useEffect para que esté disponible globalmente
-    const loadFavorites = async (userId: string) => {
-        const data = await getFavorites(userId);
-        setFavorites(data);
-    };
+    const favorites = user?.favorites || [];
 
     useEffect(() => {
         // Cargar usuario al iniciar app
@@ -53,30 +61,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }, []);
 
         const toggleFavorite = async (recipeId: string) => {
-            const data = await toggleFavoriteBack(user?.username || '', recipeId);
-            if (!data) {
-                Alert.alert('Error', 'No se pudo actualizar favorito');
-                return;
-            }
-            // actualizar localmente
-            if (favorites.includes(recipeId)) {
-                setFavorites(favorites.filter(id => id !== recipeId));
-            } else {
-                setFavorites([...favorites, recipeId]);
+            try {
+                if (!user) return;
+                console.log(user.favorites);
+                if (user.favorites.some((r) => r._id === recipeId)) {
+                    await removeFavoriteAPI(user._id, recipeId);
+                } else {
+                    await addFavoriteAPI(user._id, recipeId);
+                }
+                const updatedUser = await getUserById(user._id);
+                setUser(updatedUser);
+                await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+            } catch (err) {
+                console.error("Error al actualizar favorito:", err);
             }
         };
 
-        const isFavorite = (recipeId: string) => favorites.includes(recipeId);
+        const isFavorite = (recipeId: string) => {
+            return user?.favorites?.some((r) => r._id === recipeId) || false;
+        };
+
 
         const login = async (email: string, password: string) => {
             setIsLoading(true);
             try {
-            // Simulación. Usar tu backend real.
 
-            const user = await loginApi(email,password);
-            await AsyncStorage.setItem('user', JSON.stringify(user));
-            setUser(user);
-            loadFavorites(user._id);
+                const user = await loginApi(email,password);
+                await AsyncStorage.setItem('user', JSON.stringify(user));
+                setUser(user);
             } catch (error) {
             console.error(error);
             Alert.alert('Error', 'No se pudo iniciar sesión');
@@ -90,7 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             try {
             const newUser = { username, email };
             await AsyncStorage.setItem('user', JSON.stringify(newUser));
-            setUser(newUser);
+            //setUser(newUser);   //TODO: Implementar registro
             } catch (error) {
             console.error(error);
             Alert.alert('Error', 'No se pudo registrar');

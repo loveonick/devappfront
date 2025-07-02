@@ -26,7 +26,7 @@ export const getFavorites = async (userId: string) => {
     }));
     return mappedRecipes;
 }
-export const toggleFavoriteBack = async (userId: string, recipeId: string) => {
+export const addFavoriteAPI = async (userId: string, recipeId: string) => {
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
 
@@ -46,4 +46,36 @@ export const toggleFavoriteBack = async (userId: string, recipeId: string) => {
     }
     const data = await response.json();
     return data;
+}
+export const removeFavoriteAPI = async (userId: string, recipeId: string) => {
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    const raw = JSON.stringify({
+        "userId": userId,
+        "recipeId": recipeId
+    });
+
+    const requestOptions = {
+        method: "DELETE",
+        headers: myHeaders,
+        body: raw
+    };
+    const response = await fetch(`${url}/users/fav`, requestOptions);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    return data;
+}
+export const getUserById = async (userId: string) => {
+    const requestOptions = {
+    method: "GET"
+    };
+    const response = await fetch(`${url}/users/${userId}`, requestOptions);
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    return data.user;
 }

@@ -1,19 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import RecipeCard from '../../../components/RecipeCard';
 
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
-
 import { useAuth } from '../../context/AuthContext';
 import { useRecipeContext } from '../../context/RecipeContext';
-
+import {mapRecipe} from '../../../utils/mapRecipe';
 
 const ProfileScreen = () => {
   const router = useRouter();
-  const { user, logout, favorites, isFavorite, toggleFavorite} = useAuth();
+  const { user, logout, isFavorite, toggleFavorite } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'mis-recetas' | 'guardadas'>('mis-recetas');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -24,13 +20,13 @@ const ProfileScreen = () => {
     await logout();
   };
 
-
   const handleLogoutComplete = () => {
     setShowLogoutMessage(false);
   };
-  const { recipes } = useRecipeContext();
-  const savedRecipes = favorites;
 
+  const { recipes } = useRecipeContext();
+  const savedRecipes = user?.favorites?.map(mapRecipe) || [];
+  console.log(user);
   const displayedRecipes = activeTab === 'mis-recetas' ? recipes : savedRecipes;
 
   return (
@@ -38,7 +34,7 @@ const ProfileScreen = () => {
       <ScrollView className="flex-1 bg-white px-4 py-6">
         {/* Perfil */}
         <View className="flex-col sm:flex-row items-center sm:items-start mb-6">
-          {user? (
+          {user ? (
             <Image
               source={require('../../../assets/profileExample.jpg')}
               className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4"
@@ -50,7 +46,6 @@ const ProfileScreen = () => {
           <View className="items-center sm:items-start">
             <Text className="text-xl font-bold text-center sm:text-left">{user?.username || 'Usuario'}</Text>
             <Text className="text-gray-500 text-center sm:text-left">{user?.email || 'correo@ejemplo.com'}</Text>
-
           </View>
         </View>
 
@@ -89,6 +84,7 @@ const ProfileScreen = () => {
         {/* Recetas */}
         {displayedRecipes.map((item) => (
           <TouchableOpacity
+            key={item.id}
             onPress={() =>
               router.push({
                 pathname: '/recipes/[id]',
@@ -97,14 +93,15 @@ const ProfileScreen = () => {
             }
             className="mb-4"
           >
-          <RecipeCard
-            imgsrc={{ uri: item.imageUri }}
-            title={item.title}
-            description={item.description}
-            tags={item.tags}
-            author={item.author}
-            date={item.date.toString()}
-          />
+            <RecipeCard
+              recipeId={item.id}
+              imgsrc={{ uri: item.imageUri }}
+              title={item.title}
+              description={item.description}
+              tags={item.tags}
+              author={item.author}
+              date={item.date.toString()}
+            />
           </TouchableOpacity>
         ))}
       </ScrollView>
