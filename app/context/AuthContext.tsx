@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import { loginApi } from '../api/auth_api'; 
 
 type User = {
   username: string;
@@ -44,9 +45,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(true);
         try {
         // Simulación. Usar tu backend real.
-        const fakeUser = { username: 'demo', email };
-        await AsyncStorage.setItem('user', JSON.stringify(fakeUser));
-        setUser(fakeUser);
+        //const fakeUser = { username: 'demo', email };
+        const user = await loginApi(email,password);
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+        setUser(user);
         } catch (error) {
         console.error(error);
         Alert.alert('Error', 'No se pudo iniciar sesión');
