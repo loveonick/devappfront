@@ -15,7 +15,19 @@ export const getRecipes = async () => {
       throw new Error('Network response was not ok');
     }
     const data = await response.json();
-    return data;
+    //console.log('Fetched recipes:', data);
+    const mappedRecipes = data.recipes.map((r) => ({
+      id: r._id,
+      title: r.name,
+      description: r.description,
+      imageUri: r.image,
+      ingredients: r.ingredients,
+      steps: r.procedures,
+      tags: r.tags,
+      date: r.createdAt,
+      author: r.author?.name ?? 'Desconocido',
+    }));
+    return mappedRecipes;
   } catch (error) {
     console.error('Error fetching recipes:', error);
     throw error;

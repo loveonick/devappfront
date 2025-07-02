@@ -13,6 +13,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Checkbox from 'expo-checkbox';
 
+import { useRouter } from 'expo-router';
+import { useRecipeContext } from '../../context/RecipeContext';
+
 const dishTypes = [
   'Entrada',
   'Principal',
@@ -20,25 +23,6 @@ const dishTypes = [
   'Aperitivo',
   'Bebida',
   'Snack',
-];
-
-const recipes = [
-  {
-    title: 'Spaghetti Bolognese',
-    description: 'A classic Italian pasta dish with rich meat sauce.',
-    image: 'https://example.com/spaghetti.jpg',
-    tags: ['Italian', 'Pasta'],
-    date: '2024-01-15',
-    author: 'Agustin'
-  },
-  {
-    title: 'Chicken Curry',
-    description: 'Spicy and flavorful chicken curry.',
-    image: 'https://example.com/chicken-curry.jpg',
-    tags: ['Indian', 'Spicy'],
-    date: '2023-03-22',
-    author: 'Santi'
-  },
 ];
 
 type TagFilterState = 'include' | 'exclude' | 'none';
@@ -52,11 +36,12 @@ const Buscar = () => {
     dishTypes.forEach((t) => (initial[t] = 'none'));
     return initial;
   });
-
-  const router = {
+  const { recipes } = useRecipeContext();
+  const router = useRouter();
+  const routerBack = {
     back: () => window.history.back(), // O tu método real con expo-router
   };
-
+  console.log('Recipes:', recipes);
   const sortedRecipes = [...recipes].sort((a, b) => {
     if (sortOrder === 'alphabetical') {
       return a.title.localeCompare(b.title);
@@ -82,9 +67,9 @@ const Buscar = () => {
   // Filtrado de recetas con búsqueda + filtros tags include/exclude
   const filteredRecipes = sortedRecipes.filter((r) => {
     const matchSearch =
-      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      //r.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.author.toLowerCase().includes(searchQuery.toLowerCase());
+      r.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.author?.toLowerCase().includes(searchQuery.toLowerCase());
+
 
 
     const includeTags = Object.entries(tagFilters)
@@ -106,7 +91,7 @@ const Buscar = () => {
     <SafeAreaView className="flex-1 bg-white">
       <View className="p-4 flex-1">
         <View className="flex-row items-center mb-4">
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => routerBack.back()}>
             <AntDesign name="arrowleft" size={24} color="black" />
           </TouchableOpacity>
           <Text className="ml-4 text-lg font-semibold">Buscar recetas</Text>
@@ -144,15 +129,25 @@ const Buscar = () => {
         <FlatList
           data={filteredRecipes}
           keyExtractor={(_, i) => i.toString()}
-          renderItem={({ item }) => (
-            <RecipeCard
-              imgsrc={item.image}
-              title={item.title}
-              description={item.description}
-              tags={item.tags}
-              author={item.author}
-              date={item.date}
-            />
+                    renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/recipes/[id]',
+                  params: { id: item.id },
+                })
+              }
+              className="mb-4"
+            >
+              <RecipeCard
+                imgsrc={{ uri: item.imageUri }}
+                title={item.title}
+                description={item.description}
+                tags={item.tags}
+                author={item.author}
+                date={item.date.toString()}
+              />
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <Text className="text-center text-gray-500 mt-20">
