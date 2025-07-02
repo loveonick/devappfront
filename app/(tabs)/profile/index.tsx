@@ -1,14 +1,15 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import RecipeCard from '../../../components/RecipeCard';
+
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
+import { useRecipeContext } from '../../context/RecipeContext';
+import {mapRecipe} from '../../../utils/mapRecipe';
 
 const ProfileScreen = () => {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, isFavorite, toggleFavorite } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'mis-recetas' | 'guardadas'>('mis-recetas');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -19,39 +20,13 @@ const ProfileScreen = () => {
     await logout();
   };
 
-
   const handleLogoutComplete = () => {
     setShowLogoutMessage(false);
-    // lógica de logout si la implementás
   };
 
-  const recipes = [
-    {
-      id: 1,
-      title: 'Tacos saludables',
-      description: 'Tacos de pollo con vegetales y salsa picante.',
-      image: require('../../../assets/descarga_3.jpg'),
-      tags: ['Mexicana', 'Saludable'],
-    },
-    {
-      id: 2,
-      title: 'Ensalada fresca',
-      description: 'Mezcla de hojas verdes con quinoa y palta.',
-      image: require('../../../assets/descarga_3.jpg'),
-      tags: ['Vegana', 'Ligera'],
-    },
-  ];
-
-  const savedRecipes = [
-    {
-      id: 3,
-      title: 'Sushi casero',
-      description: 'Rolls de salmón con arroz y palta.',
-      image: require('../../../assets/descarga_3.jpg'),
-      tags: ['Japonesa', 'Clásico'],
-    },
-  ];
-
+  const { recipes } = useRecipeContext();
+  const savedRecipes = user?.favorites?.map(mapRecipe) || [];
+  console.log(user);
   const displayedRecipes = activeTab === 'mis-recetas' ? recipes : savedRecipes;
 
   return (
@@ -59,7 +34,7 @@ const ProfileScreen = () => {
       <ScrollView className="flex-1 bg-white px-4 py-6">
         {/* Perfil */}
         <View className="flex-col sm:flex-row items-center sm:items-start mb-6">
-          {user? (
+          {user ? (
             <Image
               source={require('../../../assets/profileExample.jpg')}
               className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4"
@@ -71,7 +46,6 @@ const ProfileScreen = () => {
           <View className="items-center sm:items-start">
             <Text className="text-xl font-bold text-center sm:text-left">{user?.username || 'Usuario'}</Text>
             <Text className="text-gray-500 text-center sm:text-left">{user?.email || 'correo@ejemplo.com'}</Text>
-
           </View>
         </View>
 
@@ -108,36 +82,27 @@ const ProfileScreen = () => {
         </View>
 
         {/* Recetas */}
-        {displayedRecipes.map((recipe) => (
-          <View
-            key={recipe.id}
-            className="flex-col sm:flex-row mb-4 bg-white rounded-xl shadow p-2"
+        {displayedRecipes.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            onPress={() =>
+              router.push({
+                pathname: '/recipes/[id]',
+                params: { id: item.id },
+              })
+            }
+            className="mb-4"
           >
-            <Image
-              source={recipe.image}
-              className="w-full h-48 sm:w-40 sm:h-32 rounded-xl mb-2 sm:mb-0 sm:mr-2"
-              resizeMode="cover"
+            <RecipeCard
+              recipeId={item.id}
+              imgsrc={{ uri: item.imageUri }}
+              title={item.title}
+              description={item.description}
+              tags={item.tags}
+              author={item.author}
+              date={item.date.toString()}
             />
-            <View className="flex-1">
-              <View className="flex-row justify-between items-start">
-                <Text className="font-bold text-base flex-1">{recipe.title}</Text>
-                <TouchableOpacity className="ml-2">
-                  <Ionicons name="heart-outline" size={20} color="black" />
-                </TouchableOpacity>
-              </View>
-              <Text className="text-xs text-gray-600 mb-2">{recipe.description}</Text>
-              <View className="flex-row flex-wrap">
-                {recipe.tags.map((tag, index) => (
-                  <Text
-                    key={index}
-                    className="text-xs bg-colorboton text-white px-2 py-1 rounded-full mr-1 mb-1"
-                  >
-                    {tag}
-                  </Text>
-                ))}
-              </View>
-            </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
 

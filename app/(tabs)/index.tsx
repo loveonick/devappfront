@@ -125,6 +125,7 @@ const Index = () => {
               className="mb-4"
             >
               <RecipeCard
+                recipeId={item.id}
                 imgsrc={{ uri: item.imageUri }}
                 title={item.title}
                 description={item.description}
