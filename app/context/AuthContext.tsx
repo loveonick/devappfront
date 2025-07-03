@@ -3,12 +3,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { loginApi } from '../api/auth_api'; 
-import { getFavorites, addFavoriteAPI,removeFavoriteAPI, getUserById } from '../api/user_api';
+import { updateUserProfile, getFavorites, addFavoriteAPI,removeFavoriteAPI, getUserById } from '../api/user_api';
 
 type User = {
   _id: string;
   username: string;
   email: string;
+  image?: string;
   favorites: Recipe[]; // <-- ya vienen populadas
 };
 
@@ -60,42 +61,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             loadUser();
         }, []);
 
-        const toggleFavorite = async (recipeId: string) => {
-            try {
-                if (!user) return;
-                console.log(user.favorites);
-                if (user.favorites.some((r) => r._id === recipeId)) {
-                    await removeFavoriteAPI(user._id, recipeId);
-                } else {
-                    await addFavoriteAPI(user._id, recipeId);
-                }
-                const updatedUser = await getUserById(user._id);
-                setUser(updatedUser);
-                await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-            } catch (err) {
-                console.error("Error al actualizar favorito:", err);
-            }
-        };
+const toggleFavorite = async (recipeId: string) => {
+  try {
+    if (!user) return;
+    if (user.favorites.some((r) => r._id === recipeId)) {
+      await removeFavoriteAPI(user._id, recipeId);
+    } else {
+      await addFavoriteAPI(user._id, recipeId);
+    }
+    const updatedUser = await getUserById(user._id);
+    const mappedUser = {
+      _id: updatedUser._id,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      image: updatedUser.imgUrl,
+      favorites: updatedUser.favorites,
+    };
+    setUser(mappedUser);
+    await AsyncStorage.setItem('user', JSON.stringify(mappedUser));
+  } catch (err) {
+    console.error("Error al actualizar favorito:", err);
+  }
+};
 
         const isFavorite = (recipeId: string) => {
             return user?.favorites?.some((r) => r._id === recipeId) || false;
         };
 
 
-        const login = async (email: string, password: string) => {
-            setIsLoading(true);
-            try {
-
-                const user = await loginApi(email,password);
-                await AsyncStorage.setItem('user', JSON.stringify(user));
-                setUser(user);
-            } catch (error) {
-            console.error(error);
-            Alert.alert('Error', 'No se pudo iniciar sesión');
-            } finally {
-            setIsLoading(false);
-            }
-        };
+const login = async (email: string, password: string) => {
+  setIsLoading(true);
+  try {
+    const user = await loginApi(email, password);
+    const mappedUser = {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      image: user.imgUrl,
+      favorites: user.favorites,
+    };
+    setUser(mappedUser);
+    await AsyncStorage.setItem('user', JSON.stringify(mappedUser));
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'No se pudo iniciar sesión');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
         const register = async (username: string, email: string, password: string) => {
             setIsLoading(true);
@@ -111,16 +124,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         };
 
-        const updateUser = async (newData) => {
-            try {
-                const updatedUser = { ...user, ...newData };
-                setUser(updatedUser);
-                await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-            } catch (error) {
-                console.error('Error actualizando usuario:', error);
-            }
-        };
-
+const updateUser = async (newData: { username: string; email: string; image?: string | null }) => {
+    if (!user) return;
+    try {
+        const updatedUser = await updateUserProfile(user._id, newData);
+        setUser(updatedUser);
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (error) {
+        console.error('Error actualizando usuario:', error);
+        Alert.alert('Error', 'No se pudo actualizar el perfil');
+    }
+};
         const logout = async () => {
             try {
             await AsyncStorage.removeItem('user');

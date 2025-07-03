@@ -34,17 +34,17 @@ const ProfileScreen = () => {
       <ScrollView className="flex-1 bg-white px-4 py-6">
         {/* Perfil */}
         <View className="flex-col sm:flex-row items-center sm:items-start mb-6">
-          {user ? (
-            <Image
-              source={require('../../../assets/profileExample.jpg')}
-              className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4"
-              resizeMode="cover"
-            />
-          ) : (
-            <View className="w-20 h-20 rounded-full bg-gray-200 mb-2 sm:mb-0 sm:mr-4" />
-          )}
+          {user?.image ? (
+  <Image
+    source={{ uri: user.image }}
+    className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4"
+    resizeMode="cover"
+  />
+) : (
+  <View className="w-20 h-20 rounded-full bg-gray-200 mb-2 sm:mb-0 sm:mr-4" />
+)}
           <View className="items-center sm:items-start">
-            <Text className="text-xl font-bold text-center sm:text-left">{user?.username || 'Usuario'}</Text>
+            <Text className="text-xl font-bold text-center sm:text-left">{user?.username || ''}</Text>
             <Text className="text-gray-500 text-center sm:text-left">{user?.email || 'correo@ejemplo.com'}</Text>
           </View>
         </View>

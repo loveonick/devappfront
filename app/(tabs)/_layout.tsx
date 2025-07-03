@@ -15,6 +15,7 @@ const TabsLayout = () => {
       </View>
     );
   }
+  
 
   if (!user) {
     return <Redirect href="/auth/login" />;
@@ -54,13 +55,6 @@ const TabsLayout = () => {
       />
       <Tabs.Screen
         name="search"
-        options={{
-          href: null, // Oculta esta tab
-          headerShown: false,
-        }}
-      />
-      <Tabs.Screen
-        name="masterprofile"
         options={{
           href: null, // Oculta esta tab
           headerShown: false,
