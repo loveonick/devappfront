@@ -66,6 +66,13 @@ const TabsLayout = () => {
           headerShown: false,
         }}
       />
+      <Tabs.Screen
+        name="notificationsUser"
+        options={{
+          href: null, // Oculta esta tab
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 };

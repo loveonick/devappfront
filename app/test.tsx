@@ -63,6 +63,20 @@ const test = () => {
       >
         <Text style={{ color: 'white', fontWeight: 'bold' }}>Crear Nueva Contraseña</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => router.push('/auth/pleaseLogin')}
+        style={{
+          backgroundColor: '#f43f5e',
+          padding: 12,
+          borderRadius: 8,
+          marginBottom: 10,
+          width: 200,
+          alignItems: 'center',
+        }}
+      >
+        <Text style={{ color: 'white', fontWeight: 'bold' }}>Please Login</Text>
+      </TouchableOpacity>
     </View>
   );
 };

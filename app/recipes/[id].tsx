@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { getRecipeById } from '../api/recipe_api';
 import { getQualificationsByRecipeId, addQualification } from '../api/qualification_api';
+import { saveNotification } from '../(tabs)/notificationsUser';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -64,11 +65,11 @@ export default function RecipeDetail() {
       ? userComments.reduce((sum, c) => sum + c.stars, 0) / userComments.length
       : 0;
 
-  const handleCommentSubmit = async () => {
-    if (comment.trim() === '' || ratingUser === 0) {
-      Alert.alert('Comentario incompleto', 'Por favor escribe un comentario y asigna una calificación.');
-      return;
-    }
+const handleCommentSubmit = async () => {
+  if (comment.trim() === '' || ratingUser === 0) {
+    Alert.alert('Comentario incompleto', 'Por favor escribe un comentario y asigna una calificación.');
+    return;
+  }
 
     if (!user) {
       Alert.alert('Error', 'No hay un usuario autenticado.');
