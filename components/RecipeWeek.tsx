@@ -9,7 +9,7 @@ const RecipeWeek = ({ imgsrc, title }: Props) => {
   return (
     <TouchableOpacity
       className="bg-white rounded-xl m-2 flex-1"
-      style={{ width: 140, height: 150 }} // Fijo para evitar que la imagen lo estire
+      style={{ width: 140, height: 150 }}
       activeOpacity={0.8}
     >
       <Image

@@ -7,7 +7,7 @@ const PostLoginSplash = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace('/splash/introA'); // Redirigí a tus tabs o pantalla principal
+      router.replace('/splash/introA'); 
     }, 2000); // 2 segundos
 
     return () => clearTimeout(timer);
@@ -16,7 +16,7 @@ const PostLoginSplash = () => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/logo.png')} // reemplazá con tu imagen
+        source={require('../../assets/logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />

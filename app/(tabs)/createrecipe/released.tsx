@@ -12,7 +12,7 @@ export default function PublicadoScreen() {
 
       <View className="flex-row space-x-4">
         <Pressable
-          onPress={() => router.push('/createrecipe')} // Ir directamente al formulario de creación
+          onPress={() => router.push('/createrecipe')} 
           className="bg-[#9D5C63] rounded-full px-6 py-2"
         >
           <Text className="text-white font-bold text-base">Crear otra receta</Text>

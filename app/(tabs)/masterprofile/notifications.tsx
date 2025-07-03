@@ -19,7 +19,7 @@ const NotificationsScreen = () => {
 
   const handleView = (id: number) => {
     console.log('Ver receta con ID:', id);
-    // router.push(`/ruta/receta/${id}`); si querés navegar
+    // router.push(`/ruta/receta/${id}`);
   };
 
   return (
