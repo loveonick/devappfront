@@ -5,7 +5,8 @@ import {
   FlatList,
   TouchableOpacity,
   Modal,
-  ScrollView
+  ScrollView,
+  TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecipeCard from '../../../components/RecipeCard';
@@ -40,23 +41,31 @@ const Buscar = () => {
     dishTypes.forEach((t) => (initial[t] = 'none'));
     return initial;
   });
+  const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
+  const [ingredientInput, setIngredientInput] = useState<string>('');
   const { recipes } = useRecipeContext();
   const router = useRouter();
   const routerBack = {
-    back: () => window.history.back(), // O tu método real con expo-router
+    back: () => window.history.back(),
   };
-  console.log('Recipes:', recipes);
+
+  // Obtener todos los ingredientes únicos de las recetas
+  const allIngredients = Array.from(
+    new Set(
+      recipes.flatMap(recipe => 
+        recipe.ingredients ? recipe.ingredients.map(ing => ing.name.toLowerCase()) : []
+      )
+    )
+  ).sort();
+
   const sortedRecipes = [...recipes].sort((a, b) => {
     if (sortOrder === 'alphabetical') {
       return a.title.localeCompare(b.title);
     } else {
-      return new Date(b.date).getTime() - new Date(a.date).getTime(); // más recientes primero
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
     }
   });
 
-
-
-  // Cambiar estado del tag: none -> include -> exclude -> none
   const toggleTagState = (tag: string) => {
     setTagFilters((prev) => {
       const current = prev[tag];
@@ -68,14 +77,29 @@ const Buscar = () => {
     });
   };
 
-  // Filtrado de recetas con búsqueda + filtros tags include/exclude
+  const addExcludedIngredient = () => {
+    if (ingredientInput.trim() && !excludedIngredients.includes(ingredientInput.toLowerCase())) {
+      setExcludedIngredients([...excludedIngredients, ingredientInput.toLowerCase()]);
+      setIngredientInput('');
+    }
+  };
+
+  const removeExcludedIngredient = (ingredient: string) => {
+    setExcludedIngredients(excludedIngredients.filter(ing => ing !== ingredient));
+  };
+
   const filteredRecipes = sortedRecipes.filter((r) => {
+    // Filtro por búsqueda (título, autor o ingredientes)
+    const searchLower = searchQuery.toLowerCase();
     const matchSearch =
-      r.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.author?.toLowerCase().includes(searchQuery.toLowerCase());
+      searchQuery === '' ||
+      r.title?.toLowerCase().includes(searchLower) ||
+      r.author?.toLowerCase().includes(searchLower) ||
+      r.ingredients?.some(ing => 
+        ing.name.toLowerCase().includes(searchLower)
+      );
 
-
-
+    // Filtro por tags
     const includeTags = Object.entries(tagFilters)
       .filter(([_, v]) => v === 'include')
       .map(([k]) => k);
@@ -87,9 +111,15 @@ const Buscar = () => {
     const matchIncludeTags = includeTags.every((tag) => r.tags.includes(tag));
     const hasExcludeTags = excludeTags.some((tag) => r.tags.includes(tag));
 
-    return matchSearch && matchIncludeTags && !hasExcludeTags;
-  });
+    // Filtro por ingredientes excluidos
+    const hasExcludedIngredients = excludedIngredients.length > 0
+      ? r.ingredients?.some(ing => 
+          excludedIngredients.includes(ing.name.toLowerCase())
+        )
+      : false;
 
+    return matchSearch && matchIncludeTags && !hasExcludeTags && !hasExcludedIngredients;
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -101,7 +131,7 @@ const Buscar = () => {
           <Text className="ml-4 text-lg font-semibold">Buscar recetas</Text>
         </View>
 
-        {/* Barra búsqueda + botón filtro */}
+        {/* Barra búsqueda unificada + botón filtro */}
         <View className="flex-row items-center mb-4 mx-1">
           <View className="flex-1 mr-3">
             <SearchBar
@@ -127,13 +157,14 @@ const Buscar = () => {
             .filter(([_, v]) => v !== 'none')
             .map(([k, v]) => `${v === 'include' ? '+' : '-'}${k}`)
             .join(', ')}
+          {excludedIngredients.length > 0 && ` (sin: ${excludedIngredients.join(', ')})`}
         </Text>
 
         {/* Lista de recetas */}
         <FlatList
           data={filteredRecipes}
           keyExtractor={(_, i) => i.toString()}
-                    renderItem={({ item }) => (
+          renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() =>
                 router.push({
@@ -172,7 +203,7 @@ const Buscar = () => {
         />
 
         {/* Contenedor modal */}
-        <View className="absolute left-0 right-0 bottom-0 h-[60%] bg-white rounded-t-2xl p-8 shadow-lg">
+        <View className="absolute left-0 right-0 bottom-0 h-[70%] bg-white rounded-t-2xl p-8 shadow-lg">
           <ScrollView showsVerticalScrollIndicator={true}>
             <View className="mb-6">
               <Text className="text-lg font-semibold mb-2">Ordenar por:</Text>
@@ -183,10 +214,11 @@ const Buscar = () => {
                 }
               >
                 <Text className="text-base">
-                  {sortOrder === 'alphabetical' ? 'A-Z (alfabético)' : 'Más recientes primero'}
+                  {sortOrder === 'alphabetical' ? 'A-Z (alfabético)' : 'más nueva a más antigua'}
                 </Text>
               </TouchableOpacity>
             </View>
+            
             <Text className="text-2xl font-bold mb-6">Filtrar por tags</Text>
 
             {dishTypes.map((tag) => {
@@ -194,10 +226,10 @@ const Buscar = () => {
               let color = 'gray';
               let label = 'No usar';
               if (state === 'include') {
-                color = '#2563EB'; // azul
+                color = '#2563EB';
                 label = 'Incluir';
               } else if (state === 'exclude') {
-                color = '#EF4444'; // rojo
+                color = '#EF4444';
                 label = 'Excluir';
               }
               return (
@@ -217,6 +249,40 @@ const Buscar = () => {
                 </TouchableOpacity>
               );
             })}
+
+            {/* Sección para excluir ingredientes */}
+            <View className="mt-8">
+              <Text className="text-2xl font-bold mb-4">Excluir ingredientes</Text>
+              <View className="flex-row items-center mb-2">
+                <TextInput
+                  className="flex-1 border border-gray-300 rounded p-2 mr-2"
+                  placeholder="Ingresa un ingrediente a excluir"
+                  value={ingredientInput}
+                  onChangeText={setIngredientInput}
+                  onSubmitEditing={addExcludedIngredient}
+                />
+                <TouchableOpacity
+                  onPress={addExcludedIngredient}
+                  className="bg-blue-500 p-2 rounded"
+                >
+                  <Text className="text-white">Agregar</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Lista de ingredientes excluidos */}
+              <View className="flex-row flex-wrap">
+                {excludedIngredients.map((ingredient) => (
+                  <TouchableOpacity
+                    key={ingredient}
+                    onPress={() => removeExcludedIngredient(ingredient)}
+                    className="bg-red-100 px-3 py-1 rounded-full m-1 flex-row items-center"
+                  >
+                    <Text className="text-red-800 mr-1">{ingredient}</Text>
+                    <AntDesign name="close" size={14} color="#991b1b" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
             <TouchableOpacity
               className="mt-8 bg-blue-600 py-3 rounded-lg"
