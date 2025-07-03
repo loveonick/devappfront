@@ -26,6 +26,7 @@ interface Comment {
 }
 
 export default function RecipeDetail() {
+
   const { id } = useLocalSearchParams();
 //  const { getRecipeById } = useRecipeContext();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -192,6 +193,7 @@ const handleCommentSubmit = async () => {
 
       {/* Contenido principal */}
       <View className="p-5">
+
         {/* Título y descripción */}
         <Text className="text-3xl font-bold text-gray-800 mb-2">{recipe.title}</Text>
         <Text className="text-gray-600 mb-5">{recipe.description}</Text>
