@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Pressable, Image, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Pressable, Image, TouchableOpacity, Platform } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -12,6 +12,7 @@ import {addProcedure} from "../../api/procedure_api";
 interface RecipeStep {
   description: string;
   imageUri?: string;
+  imageFile?: any; // File (web) o { uri, name, type } (mobile)
 }
 
 export default function NewProcedureScreen() {
@@ -33,15 +34,24 @@ export default function NewProcedureScreen() {
     });
 
     if (!result.canceled) {
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      const fileName = uri.split('/').pop() || 'photo.jpg';
+      const match = /\.(\w+)$/.exec(fileName);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      const imageFile = Platform.OS === 'web'
+        ? asset as any
+        : { uri, name: fileName, type };
       const newSteps = [...steps];
       newSteps[currentStep - 1] = {
         ...newSteps[currentStep - 1],
-        imageUri: result.assets[0].uri,
+        imageUri: uri,
+        imageFile: imageFile,
       };
       setSteps(newSteps);
-    }
+    };
   };
-
   const handleNextStep = () => {
     if (!steps[currentStep - 1]?.description) {
       alert('Agrega una descripción para este paso');
@@ -64,9 +74,15 @@ export default function NewProcedureScreen() {
       const procedureIds: string[] = [];
 
       for (const step of steps) {
-        const savedProcedure = await addProcedure(step);
+        const procedureFormData = new FormData();
+        procedureFormData.append("content", step.description);
+
+        if (step.imageFile) {
+          procedureFormData.append("media", step.imageFile);
+        }
+        const savedProcedure = await addProcedure(procedureFormData);
         procedureIds.push(savedProcedure._id);
-      }
+      };
       formData.append('procedures', JSON.stringify(procedureIds));
 
       for (const ingredient of draft.ingredients ?? []) {
@@ -83,16 +99,26 @@ export default function NewProcedureScreen() {
 
       formData.append('type', draft.type ?? '');
 
-      if (draft.imageUri) {
-        const image = {
-          uri: draft.imageUri,
-          type: 'image/jpeg',
-          name: 'recipe.jpg',
+      if (Platform.OS === 'web') {
+        if (draft.imageFile) {
+          formData.append('media', draft.imageFile); // file ya es un File válido
+        }
+      } else {
+        if (draft.imageUri) {
+          const filename = draft.imageUri.split('/').pop();
+          const match = /\.(\w+)$/.exec(filename ?? '');
+          const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+          formData.append('media', {
+            uri: draft.imageUri,
+            name: filename ?? 'photo.jpg',
+            type,
+          } as any); // el 'as any' es necesario para RN FormData
         };
-        formData.append('media', image as any);
-      }
+      };
 
       const data = await createRecipe(formData);
+      console.log(data.recipe);
       const newRecipe = {
           id: data.recipe._id,
           title: data.recipe.name as string,
@@ -109,7 +135,7 @@ export default function NewProcedureScreen() {
           })),
           tags: data.recipe.tags || [],
           date: data.recipe.date || new Date().toISOString(),
-          author: data.recipe.author || 'Desconocido', 
+          author: data.recipe.author.name || 'Desconocido', 
       };
       console.log(newRecipe);
       await addRecipe(newRecipe);

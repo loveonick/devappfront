@@ -6,6 +6,7 @@ interface RecipeDraft {
   title?: string;
   description?: string;
   imageUri?: string;
+  imageFile?: File;
   ingredients?: { name: string; quantity: string; unit: string }[];
   steps?: { description: string; imageUri?: string }[];
   tags?: string[];

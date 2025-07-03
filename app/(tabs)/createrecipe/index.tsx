@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Platform } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,6 +21,7 @@ export default function Index() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null); // solo para web
   
   const [type, setType] = useState<string>('');
   const { updateDraft } = useRecipeContext();
@@ -30,6 +31,7 @@ export default function Index() {
       setTitle('');
       setDescription('');
       setImageUri(null);
+      setImageFile(null);
       setType('');
     }, [])
   );
@@ -42,9 +44,13 @@ export default function Index() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
-
+    
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      setImageUri(asset.uri);
+      if (Platform.OS === 'web') {
+        setImageFile(asset.file ?? null); // guardar el File en web
+      }
     }
   };
 
@@ -53,8 +59,14 @@ export default function Index() {
       alert('Completa todos los campos');
       return;
     }
-    const tags = type ? [type] : [];
-    updateDraft({ title, description, imageUri, type, tags });
+    updateDraft({
+      title,
+      description,
+      imageUri,
+      imageFile,
+      type,
+      tags: type ? [type] : [],
+    });
 
     router.push('/createrecipe/ingredients',);
   };
