@@ -4,13 +4,12 @@ import RecipeCard from '../../../components/RecipeCard';
 
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
-import { useRecipeContext } from '../../context/RecipeContext';
 import {mapRecipe} from '../../../utils/mapRecipe';
 import { getRecipesByUserId } from '../../api/recipe_api';
 
 const ProfileScreen = () => {
   const router = useRouter();
-  const { user, logout, isFavorite, toggleFavorite } = useAuth();
+  const { user, logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'mis-recetas' | 'guardadas'>('mis-recetas');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -35,7 +34,6 @@ const ProfileScreen = () => {
     try {
       const userRecipes = await getRecipesByUserId(user._id);
       setUserRecipes(userRecipes); 
-      //setUserRecipes(userRecipes.map(mapRecipe)); // si usás `mapRecipe`
     } catch (error) {
       console.error(error);
     }

@@ -5,7 +5,7 @@ import Slider from '@react-native-community/slider';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function RecipePage() {
-  const [ratingUser, setRatingUser] = useState(0); // Calificación del comentario del usuario
+  const [ratingUser, setRatingUser] = useState(0);
   const [comment, setComment] = useState('');
   const [userComments, setUserComments] = useState([
     { name: 'Laura Rodríguez', text: '¡Me encantó esta receta! Muy fácil de seguir.', stars: 5 },

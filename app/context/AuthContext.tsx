@@ -9,7 +9,7 @@ type User = {
   _id: string;
   username: string;
   email: string;
-  favorites: Recipe[]; // <-- ya vienen populadas
+  favorites: Recipe[];
 };
 
 type Recipe = {
