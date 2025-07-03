@@ -41,7 +41,7 @@ export default function NewProcedureScreen() {
       const type = match ? `image/${match[1]}` : 'image/jpeg';
 
       const imageFile = Platform.OS === 'web'
-        ? asset as any
+        ? asset.file ?? asset
         : { uri, name: fileName, type };
       const newSteps = [...steps];
       newSteps[currentStep - 1] = {
@@ -72,13 +72,20 @@ export default function NewProcedureScreen() {
       // Tomar ingredientes, tags, tipo, etc, desde el draft:
       const ingredientIds: string[] = [];
       const procedureIds: string[] = [];
+      console.log(steps);
 
       for (const step of steps) {
         const procedureFormData = new FormData();
         procedureFormData.append("content", step.description);
 
         if (step.imageFile) {
-          procedureFormData.append("media", step.imageFile);
+            if (Platform.OS === 'web') {
+              // En web step.imageFile debe ser un File/Blob válido
+              procedureFormData.append('media', step.imageFile);
+            } else {
+              // En RN paso objeto {uri, name, type} y poner el tercer parámetro para el nombre
+              procedureFormData.append('media', step.imageFile, step.imageFile.name);
+            }
         }
         const savedProcedure = await addProcedure(procedureFormData);
         procedureIds.push(savedProcedure._id);
@@ -131,7 +138,7 @@ export default function NewProcedureScreen() {
           })),
           steps: data.recipe.procedures.map((p: any) => ({
             description: p.content,
-            imageUri: p.media?.[0], // opcional, puede no existir
+            imageUri: p.media?? '', // opcional, puede no existir
           })),
           tags: data.recipe.tags || [],
           date: data.recipe.date || new Date().toISOString(),

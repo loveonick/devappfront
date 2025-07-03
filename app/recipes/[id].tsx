@@ -51,7 +51,7 @@ export default function RecipeDetail() {
     }
     return null;
   };
-
+  console.log(recipe);
   const calculateIngredients = () => {
     if (!recipe?.ingredients) return [];
     
