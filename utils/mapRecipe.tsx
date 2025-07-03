@@ -19,5 +19,5 @@ export const mapRecipe = (rawRecipe: any): Recipe => ({
   steps: rawRecipe.procedures || [],        // igual que arriba
   tags: rawRecipe.tags || [],
   date: rawRecipe.createdAt || new Date().toISOString(),
-  author: rawRecipe.author, // si viene como ID, lo podés mostrar o poblar si querés
+  author: rawRecipe.author.name, // si viene como ID, lo podés mostrar o poblar si querés
 });
