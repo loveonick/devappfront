@@ -65,7 +65,7 @@ export const getRecipeById = async (id) => {
       })) || [],
       steps: data.procedures?.map(p => ({
         description: p.content,
-        imageUri: p.media[0],
+        imageUri: p.media ? p.media : '',
       })) || [],
       tags: data.tags || [],
     };
