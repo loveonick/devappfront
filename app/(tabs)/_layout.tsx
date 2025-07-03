@@ -59,6 +59,13 @@ const TabsLayout = () => {
           headerShown: false,
         }}
       />
+      <Tabs.Screen
+        name="masterprofile"
+        options={{
+          href: null, // Oculta esta tab
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 };

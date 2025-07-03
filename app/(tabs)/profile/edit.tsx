@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -9,19 +9,44 @@ import { useAuth } from '../../context/AuthContext';
 
 const EditProfileScreen = () => {
   const router = useRouter();
-
+  
   const { user, updateUser } = useAuth();
   const [newUsername, setNewUsername] = useState(user?.username || '');
   const [newEmail, setNewEmail] = useState(user?.email || '');
 
+  const [emailValid, setEmailValid] = useState(true);
+
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
+
+  // Cargar datos existentes al entrar
+/*   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await AsyncStorage.getItem('profileData');
+        if (data) {
+          const { username, email, image } = JSON.parse(data);
+          setNewUsername(username || '');
+          setNewEmail(email || '');
+          
+        }
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+      }
+    };
+    loadData();
+  }, []); */
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
+  };
+
+  const validateEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
   };
 
   const handleConfirm = async () => {
@@ -46,6 +71,7 @@ const EditProfileScreen = () => {
         </TouchableOpacity>
 
         <View className="mt-12 items-center">
+          {/* Imagen de perfil seleccionable */}
           <TouchableOpacity onPress={pickImage} className="relative mb-6">
 
             <View className="w-24 h-24 rounded-full bg-gray-200" />
@@ -54,6 +80,7 @@ const EditProfileScreen = () => {
             </View>
           </TouchableOpacity>
 
+          {/* Input: Nombre de usuario */}
           <TextInput
             className="border border-colorboton text-center text-lg px-4 py-2 mb-4 rounded-md w-full"
             value={newUsername}
@@ -61,20 +88,33 @@ const EditProfileScreen = () => {
             placeholder="Nombre de usuario"
           />
 
+          {/* Input: Email */}
           <TextInput
-            className="border border-colorboton text-center text-lg px-4 py-2 mb-6 rounded-md w-full"
+            className="border border-colorboton text-center text-lg px-4 py-2 rounded-md w-full"
             value={newEmail}
-            onChangeText={setNewEmail}
+            onChangeText={(text) => {
+              setNewEmail(text);
+              setEmailValid(validateEmail(text));
+            }}
             keyboardType="email-address"
             placeholder="Correo electrónico"
           />
+          {!emailValid && (
+            <Text className="text-red-500 text-sm mb-4">Correo electrónico inválido</Text>
+          )}
 
-          <TouchableOpacity onPress={() => setShowConfirm(true)} className="bg-colorboton px-6 py-3 rounded-md">
+          {/* Botón: Guardar cambios */}
+          <TouchableOpacity
+            onPress={() => setShowConfirm(true)}
+            className={`px-6 py-3 rounded-md ${emailValid ? 'bg-colorboton' : 'bg-gray-400'}`}
+            disabled={!emailValid}
+          >
             <Text className="text-white font-semibold text-lg">Guardar cambios</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
+      {/* Modal de confirmación */}
       <Modal visible={showConfirm} transparent animationType="fade">
         <View className="flex-1 justify-center items-center bg-black bg-opacity-50 px-10">
           <View className="bg-white rounded-xl p-6 w-full items-center">
@@ -91,6 +131,7 @@ const EditProfileScreen = () => {
         </View>
       </Modal>
 
+      {/* Modal de “Cambios guardados” */}
       <Modal visible={showSavedMessage} transparent animationType="fade">
         <View className="flex-1 justify-center items-center bg-black bg-opacity-50 px-10">
           <View className="bg-white rounded-xl p-6 w-full items-center">
@@ -98,7 +139,7 @@ const EditProfileScreen = () => {
             <TouchableOpacity
               onPress={() => {
                 setShowSavedMessage(false);
-                router.back(); // vuelve al perfil
+                router.back();
               }}
               className="px-6 py-2 bg-colorboton rounded-md"
             >
