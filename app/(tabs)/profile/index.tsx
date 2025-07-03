@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import RecipeCard from '../../../components/RecipeCard';
 
@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useRecipeContext } from '../../context/RecipeContext';
 import {mapRecipe} from '../../../utils/mapRecipe';
+import { getRecipesByUserId } from '../../api/recipe_api';
 
 const ProfileScreen = () => {
   const router = useRouter();
@@ -24,11 +25,26 @@ const ProfileScreen = () => {
     setShowLogoutMessage(false);
   };
 
-  const { recipes } = useRecipeContext();
+  //const { recipes } = useRecipeContext();
+  const [userRecipes, setUserRecipes] = useState([]);
   const savedRecipes = user?.favorites?.map(mapRecipe) || [];
   console.log(user);
-  const displayedRecipes = activeTab === 'mis-recetas' ? recipes : savedRecipes;
+  const displayedRecipes = activeTab === 'mis-recetas' ? userRecipes : savedRecipes;
+  useEffect(() => {
+  const fetchUserRecipes = async () => {
+    try {
+      const userRecipes = await getRecipesByUserId(user._id);
+      setUserRecipes(userRecipes); 
+      //setUserRecipes(userRecipes.map(mapRecipe)); // si usás `mapRecipe`
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
+  if (user && activeTab === 'mis-recetas') {
+    fetchUserRecipes();
+  }
+}, [user, activeTab]);
   return (
     <>
       <ScrollView className="flex-1 bg-white px-4 py-6">

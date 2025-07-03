@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, Image, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Platform, Alert} from 'react-native';
 import { useState, useCallback } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -36,6 +36,29 @@ export default function Index() {
     }, [])
   );
 
+/*   // --- Lógica de Red y Almacenamiento Local ---
+  const RECIPE_STORAGE_KEY = 'pendingRecipes'; // Clave para AsyncStorage
+
+  // Monitorea la conexión de red y procesa recetas almacenadas al conectarse a Wi-Fi
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      // Si está conectado y es Wi-Fi, intenta procesar las recetas pendientes
+      if (state.isConnected && state.type === 'wifi') {
+        processStoredRecipes();
+      }
+    });
+
+    // Verificación inicial al montar el componente
+    NetInfo.fetch().then((state) => {
+      if (state.isConnected && state.type === 'wifi') {
+        processStoredRecipes();
+      }
+    });
+
+    return () => unsubscribe(); // Limpia el listener al desmontar el componente
+  }, []);
+  // --- Fin Lógica de Red y Almacenamiento Local --- */
+
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') return;
@@ -54,9 +77,9 @@ export default function Index() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!title || !description) {
-      alert('Completa todos los campos');
+      Alert.alert('Campos Incompletos', 'Por favor, completa todos los campos para continuar.');
       return;
     }
     updateDraft({

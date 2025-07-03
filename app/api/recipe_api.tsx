@@ -136,3 +136,37 @@ export const createIngredient = async (ingredientData: {
     throw error;
   }
 };
+
+export const getRecipesByUserId = async (userId: string) => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+    };
+
+    const response = await fetch(`${url}/recipes/user/${userId}`, requestOptions);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    
+    const data = await response.json();
+    const recipes = data.recipes.map((r) => ({
+      id: r._id,
+      title: r.name,
+      description: r.description,
+      imageUri: r.image,
+      ingredients: r.ingredients,
+      steps: r.procedures,
+      tags: r.tags,
+      date: r.createdAt,
+      author: r.author?.name ?? 'Desconocido',
+    }));
+    return recipes;
+  } catch (error) {
+    console.error('Error fetching recipes by user ID:', error);
+    throw error;
+  }
+};

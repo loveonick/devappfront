@@ -1,4 +1,4 @@
-import { FlatList, Image, Text, TouchableOpacity, View, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import { FlatList, Image, Text, TouchableOpacity, View, ScrollView, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import SearchBar from '../../components/SearchBar';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../context/AuthContext';
 import { getRecipes } from '../api/recipe_api';
 import { useRecipeContext } from '../context/RecipeContext';
+import Icon from 'react-native-vector-icons/Ionicons';
+import NetInfo from '@react-native-community/netinfo';
 
 const dishTypes = [
   "Entrada",
@@ -31,20 +33,35 @@ const Index = () => {
 
   const { recipes, setRecipes } = useRecipeContext();
   const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const checkConnectionAndFetchData = async () => {
+      const state = await NetInfo.fetch();
+      setIsConnected(state.isConnected);
+
+      if (!state.isConnected) {
+        Alert.alert(
+          'Sin conexión',
+          'No se puede usar la aplicación sin conexión a internet.'
+        );
+        setLoading(false);
+        return;
+      }
+
       try {
         const data = await getRecipes();
         setRecipes(data || []);
       } catch (err) {
         console.error('Error al cargar recetas:', err);
-        setRecipes([]); // ← borra también las recetas del context si falla
+        setRecipes([]);
+        //setRecipes(data.recipes || []);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+
+    checkConnectionAndFetchData();
   }, []);
 
   const filteredRecipes = recipes.filter((r) => {
@@ -52,11 +69,32 @@ const Index = () => {
       selectedDishType === 'Todos' || (r.tags && r.tags.includes(selectedDishType));
     return matchDishType;
   });
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-colorfondo">
+        <ActivityIndicator size="large" color="#6B0A1D" />
+        <Text className="mt-4 text-gray-700">Cargando...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isConnected) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-colorfondo px-4">
+        <Icon name="cloud-offline-outline" size={80} color="#6B0A1D" />
+        <Text className="text-xl font-bold text-center mt-4">
+          ¡Sin conexión a Internet!
+        </Text>
+        <Text className="text-gray-600 text-center mt-2">
+          No podemos mostrar las recetas sin conexión. Por favor, revisa tu conexión e inténtalo de nuevo.
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="h-full bg-colorfondo">
       <View className="flex-1 mt-7 bg-white">
-        {/* Header */}
         <View className="flex-row items-center justify-between px-4 bg-colorfondo">
           <Image
             source={require('../../assets/logo.png')}
@@ -72,25 +110,26 @@ const Index = () => {
               />
             </TouchableOpacity>
           </View>
-          <View className="ml-4">
-            <MaterialIcons name="notifications-none" size={24} color="black" />
-          </View>
+          <TouchableOpacity onPress={() => router.push('/notificationsUser')}>
+            <View className="ml-4">
+              <MaterialIcons name="notifications-none" size={24} color="black" />
+            </View>
+          </TouchableOpacity>
+
         </View>
 
-        {/* Lista de recetas */}
         <FlatList
           data={filteredRecipes}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16, flexGrow: 1 }}
           ListHeaderComponent={
             <>
-              <Text className="text-xl font-bold mb-2 mt-4">Recetas de la semana</Text>
-
-              {filteredRecipes.length === 0 && !loading ? (
+              <Text className="text-xl font-bold mb-2 mt-4">Recetas recientes</Text>
+              {recipes.length === 0 ? (
                 <Text className="text-gray-500 mb-4">No hay recetas para mostrar</Text>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 space-x-2">
-                  {filteredRecipes.slice(0, 3).map((recipe) => (
+                  {recipes.slice(0, 3).map((recipe) => (
                     <RecipeWeek
                       key={recipe.id}
                       imgsrc={{ uri: recipe.imageUri }}
@@ -105,16 +144,6 @@ const Index = () => {
                 onSelectDishType={setSelectedDishType}
               />
             </>
-          }
-          ListEmptyComponent={
-            
-            <View className="flex-1 justify-center items-center mt-10">
-              {loading ? (
-                <ActivityIndicator size="large" color="#6B0A1D" />
-              ) : (
-                <Text className="text-gray-500">No se encontraron recetas</Text>
-              )}
-            </View>
           }
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -138,19 +167,6 @@ const Index = () => {
             </TouchableOpacity>
           )}
         />
-
-        {/* Footer solo si no está logueado */}
-        {!user && (
-          <View className="absolute bottom-0 left-0 right-0 bg-colorboton p-4 flex-row items-center justify-between">
-            <Text className="text-sm font-semibold text-white">¿Todavía no tienes cuenta? ¡Únete!</Text>
-            <TouchableOpacity
-              className="bg-white px-3 py-1 rounded"
-              onPress={() => router.push('/auth/login')}
-            >
-              <Text className="text-colorboton font-semibold">Iniciar Sesión</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
     </SafeAreaView>
   );

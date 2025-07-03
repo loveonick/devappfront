@@ -7,6 +7,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { getRecipeById } from '../api/recipe_api';
 import { getQualificationsByRecipeId, addQualification } from '../api/qualification_api';
+import { saveNotification } from '../(tabs)/notificationsUser';
 
 interface Recipe {
   id: string;
@@ -64,21 +65,29 @@ export default function RecipeDetail() {
     ? (userComments.reduce((sum, c) => sum + c.stars, 0) / userComments.length)
     : 0;
 
-  const handleCommentSubmit = async () => {
-    if (comment.trim() === '' || ratingUser === 0) {
-      Alert.alert('Comentario incompleto', 'Por favor escribe un comentario y asigna una calificación.');
-      return;
-    }
+const handleCommentSubmit = async () => {
+  if (comment.trim() === '' || ratingUser === 0) {
+    Alert.alert('Comentario incompleto', 'Por favor escribe un comentario y asigna una calificación.');
+    return;
+  }
 
-    const newComment = await addQualification(id as string, {
-      userId: '685dd54ddd26ee167051cb6f', // Dato hardcodeado para probar
-      star: ratingUser,
-      comment: comment,
-    });
-    setUserComments([newComment, ...userComments]);
-    setComment('');
-    setRatingUser(0);
-  };
+  const newComment = await addQualification(id as string, {
+    userId: '685dd54ddd26ee167051cb6f', // Hardcodeado para testeo
+    star: ratingUser,
+    comment: comment,
+  });
+
+  // Agregar notificación localmente
+  await saveNotification({
+    id: Date.now().toString(),
+    content: 'Nuevo comentario en la receta',
+    idRecipe: id as string,
+  });
+
+  setUserComments([newComment, ...userComments]);
+  setComment('');
+  setRatingUser(0);
+};
 
   useFocusEffect(
     useCallback(() => {
