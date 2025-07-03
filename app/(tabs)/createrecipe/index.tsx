@@ -1,38 +1,95 @@
 import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
-import { useState, useCallback, useEffect } from 'react'; // Agregamos useEffect
-import { useRouter } from 'expo-router';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useRecipeContext } from '../../context/RecipeContext'; // Asumo que aquí manejarás la lógica de guardado
-import { useFocusEffect } from 'expo-router';
-import NetInfo from '@react-native-community/netinfo'; // Importamos NetInfo
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Importamos AsyncStorage
+import { useRecipeContext } from '../../context/RecipeContext';
+import NetInfo from '@react-native-community/netinfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const OFFLINE_RECIPES_KEY = '@offline_recipes';
-
-export default function CreateRecipeIndex() { // Renombre el componente para mayor claridad
+export default function Index() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [tags] = useState<string[]>(['Nueva']);
-  const { addRecipe, addOfflineRecipe } = useRecipeContext(); // Asumo que estos métodos existen en tu contexto
+  const { addRecipe, recipes } = useRecipeContext(); // Asegúrate de que addRecipe esté disponible en tu contexto
 
-  // Limpiar campos al enfocar la pantalla
   useFocusEffect(
     useCallback(() => {
+      // Limpia los campos cuando la pantalla está en foco
       setTitle('');
       setDescription('');
       setImageUri(null);
     }, [])
   );
 
-  // Función para seleccionar imagen
+  // --- Lógica de Red y Almacenamiento Local ---
+  const RECIPE_STORAGE_KEY = 'pendingRecipes'; // Clave para AsyncStorage
+
+  // Guarda la receta localmente en AsyncStorage
+  const saveRecipeLocally = async (recipeData) => {
+    try {
+      const storedRecipes = await AsyncStorage.getItem(RECIPE_STORAGE_KEY);
+      const recipes = storedRecipes ? JSON.parse(storedRecipes) : [];
+      recipes.push(recipeData);
+      await AsyncStorage.setItem(RECIPE_STORAGE_KEY, JSON.stringify(recipes));
+      Alert.alert(
+        'Receta Guardada',
+        'La receta se ha guardado localmente y se subirá cuando haya una conexión gratuita disponible.'
+      );
+    } catch (error) {
+      console.error('Error al guardar la receta localmente:', error);
+      Alert.alert('Error', 'No se pudo guardar la receta localmente.');
+    }
+  };
+
+  // Procesa y "sube" las recetas almacenadas localmente cuando hay una conexión gratuita
+  const processStoredRecipes = async () => {
+    try {
+      const storedRecipes = await AsyncStorage.getItem(RECIPE_STORAGE_KEY);
+      if (storedRecipes) {
+        const recipesToUpload = JSON.parse(storedRecipes);
+        if (recipesToUpload.length > 0) {
+          // Simula la subida de cada receta almacenada
+          for (const recipe of recipesToUpload) {
+            // Aquí deberías integrar tu lógica de subida a una API o base de datos
+            addRecipe(recipe); // Agrega al contexto, en una app real sería una llamada API
+          }
+          await AsyncStorage.removeItem(RECIPE_STORAGE_KEY); // Limpia después de "subir"
+          Alert.alert(
+            'Recetas Sincronizadas',
+            `Se han subido ${recipesToUpload.length} receta(s) que estaban pendientes.`
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error al procesar las recetas almacenadas:', error);
+    }
+  };
+
+  // Monitorea la conexión de red y procesa recetas almacenadas al conectarse a Wi-Fi
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      // Si está conectado y es Wi-Fi, intenta procesar las recetas pendientes
+      if (state.isConnected && state.type === 'wifi') {
+        processStoredRecipes();
+      }
+    });
+
+    // Verificación inicial al montar el componente
+    NetInfo.fetch().then((state) => {
+      if (state.isConnected && state.type === 'wifi') {
+        processStoredRecipes();
+      }
+    });
+
+    return () => unsubscribe(); // Limpia el listener al desmontar el componente
+  }, []);
+  // --- Fin Lógica de Red y Almacenamiento Local ---
+
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permiso Requerido', 'Necesitamos permiso para acceder a tu galería de imágenes.');
-      return;
-    }
+    if (status !== 'granted') return;
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -44,104 +101,55 @@ export default function CreateRecipeIndex() { // Renombre el componente para may
     }
   };
 
-  // Función para guardar una receta localmente
-  const saveRecipeOffline = async (recipeData) => {
-    try {
-      const storedRecipes = await AsyncStorage.getItem(OFFLINE_RECIPES_KEY);
-      const recipes = storedRecipes ? JSON.parse(storedRecipes) : [];
-      recipes.push(recipeData);
-      await AsyncStorage.setItem(OFFLINE_RECIPES_KEY, JSON.stringify(recipes));
-      addOfflineRecipe(recipeData); // Si tienes un estado global para offline recipes
-      Alert.alert('Receta Guardada', 'La receta se ha guardado localmente y se subirá automáticamente cuando tengas conexión Wi-Fi.');
-      router.back(); // O navegar a la pantalla principal
-    } catch (error) {
-      console.error('Error guardando receta offline:', error);
-      Alert.alert('Error', 'No se pudo guardar la receta localmente.');
-    }
-  };
-
-  // Función para subir la receta al servidor
-  const uploadRecipe = async (recipeData) => {
-    try {
-      await addRecipe(recipeData); // Esto debería ser tu función para enviar al backend
-      Alert.alert('Éxito', 'Receta subida correctamente.');
-      router.back(); // O navegar a la pantalla principal
-    } catch (error) {
-      console.error('Error al subir receta:', error);
-      Alert.alert('Error', 'Hubo un problema al subir la receta. Inténtalo de nuevo.');
-    }
-  };
-
   const handleNext = async () => {
-    if (!title || !description || !imageUri) { // Aseguramos que la imagen también esté seleccionada
-      Alert.alert('Campos Incompletos', 'Por favor, completa todos los campos y selecciona una imagen.');
+    if (!title || !description) {
+      Alert.alert('Campos Incompletos', 'Por favor, completa todos los campos para continuar.');
       return;
     }
 
-    const newRecipe = {
+    const recipeData = {
       title,
       description,
-      imageUri,
-      tags,
-      // Aquí puedes añadir otros campos si los necesitas para la receta
+      imageUri: imageUri || '',
+      tags: JSON.stringify(tags),
     };
 
-    const netInfoState = await NetInfo.fetch();
+    const state = await NetInfo.fetch(); // Obtiene el estado actual de la red
 
-    if (netInfoState.isConnected) {
-      // Si hay conexión, verificamos el tipo
-      if (netInfoState.type === 'wifi') {
-        // Si es Wi-Fi, subimos automáticamente
-        uploadRecipe(newRecipe);
-      } else if (netInfoState.type === 'cellular') {
-        // Si es celular, preguntamos al usuario
-        Alert.alert(
-          'Conexión Celular Detectada',
-          'Estás usando una red celular, lo que podría incurrir en cargos de datos. ¿Deseas subir la receta ahora o esperar a una conexión Wi-Fi?',
-          [
-            {
-              text: 'Esperar Wi-Fi',
-              onPress: () => saveRecipeOffline(newRecipe),
-              style: 'cancel',
-            },
-            {
-              text: 'Subir Ahora',
-              onPress: () => uploadRecipe(newRecipe),
-            },
-          ],
-          { cancelable: false }
-        );
-      } else {
-        // Otros tipos de conexión que no son Wi-Fi ni celular (ej. ethernet en emulador, desconocido)
-        Alert.alert(
-          'Tipo de Conexión Desconocido',
-          'Tienes conexión a internet, pero no es Wi-Fi. ¿Deseas intentar subir la receta o esperar a una conexión Wi-Fi?',
-          [
-            {
-              text: 'Esperar Wi-Fi',
-              onPress: () => saveRecipeOffline(newRecipe),
-              style: 'cancel',
-            },
-            {
-              text: 'Subir Ahora',
-              onPress: () => uploadRecipe(newRecipe),
-            },
-          ],
-          { cancelable: false }
-        );
-      }
-    } else {
-      // No hay conexión en absoluto, solo guardar offline
+    if (state.isConnected && state.type === 'wifi') {
+      // Conectado vía Wi-Fi (asumido como gratuito) - procede automáticamente
+      router.push({
+        pathname: '/createrecipe/ingredients.tsx',
+        params: recipeData,
+      });
+    } else if (state.isConnected && state.type !== 'wifi') {
+      // Conectado, pero no por Wi-Fi (ej. datos móviles) - pregunta al usuario
       Alert.alert(
-        'Sin Conexión a Internet',
-        'No tienes conexión a internet. La receta se guardará localmente y se subirá automáticamente cuando te conectes.',
+        'Conexión de Datos',
+        'Estás usando una red con cargo (por ejemplo, datos móviles). ¿Deseas continuar con la carga de la receta o prefieres esperar a una conexión gratuita?',
         [
           {
-            text: 'Guardar Offline',
-            onPress: () => saveRecipeOffline(newRecipe),
+            text: 'Esperar conexión gratuita',
+            onPress: () => saveRecipeLocally(recipeData), // Guarda localmente
+            style: 'cancel',
+          },
+          {
+            text: 'Continuar ahora',
+            onPress: () =>
+              router.push({
+                pathname: '/createrecipe/ingredients.tsx',
+                params: recipeData,
+              }),
           },
         ],
         { cancelable: false }
+      );
+    } else {
+      // Sin conexión a internet
+      Alert.alert(
+        'Sin Conexión a Internet',
+        'Actualmente no tienes conexión a internet. La receta se guardará localmente y se subirá cuando tengas una conexión disponible.',
+        [{ text: 'Ok', onPress: () => saveRecipeLocally(recipeData) }] // Guarda localmente
       );
     }
   };

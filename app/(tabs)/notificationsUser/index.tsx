@@ -1,30 +1,29 @@
-import React from 'react';
-import { View, Text, FlatList } from 'react-native';
-import { TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect, useRouter } from 'expo-router';
 
-// Datos de notificaciones
-const notifications = [
-  { id: '1', content: 'Nuevo like en la receta', idRecipe: '333' },
-  { id: '2', content: 'Nuevo comentario en la receta', idRecipe: '22' },
-  { id: '3', content: 'Nuevo like en la receta', idRecipe: '8' },
-];
+const NOTIFICATIONS_KEY = '@notifications';
 
-// Componente de notificación individual
+// Componente reutilizable de notificación
 const NotificationItem = ({
   icon,
   title,
   message,
+  onPress,
 }: {
   icon: string;
   title: string;
   message: string;
+  onPress?: () => void;
 }) => {
   return (
-    <TouchableOpacity className="bg-white rounded-lg p-4 mb-4 shadow-sm flex-row items-center">
-      {/* Ícono */}
-      <Icon name={icon} size={40} color="#f43f5e" className="mr-4" />
-      {/* Contenido de la notificación */}
+    <TouchableOpacity
+      onPress={onPress}
+      className="bg-[rgb(254,245,239)] rounded-lg p-4 mb-4 shadow-sm flex-row items-center"
+    >
+      <Icon name={icon} size={40} color="#f43f5e" style={{ marginRight: 12 }} />
       <View>
         <Text className="text-lg font-semibold text-gray-800">{title}</Text>
         <Text className="text-sm text-gray-600 mt-1">{message}</Text>
@@ -33,8 +32,50 @@ const NotificationItem = ({
   );
 };
 
+// Función auxiliar para guardar una notificación
+export const saveNotification = async ({
+  id,
+  content,
+  idRecipe,
+}: {
+  id: string;
+  content: string;
+  idRecipe: string;
+}) => {
+  try {
+    const existing = await AsyncStorage.getItem(NOTIFICATIONS_KEY);
+    const current = existing ? JSON.parse(existing) : [];
+    const updated = [...current, { id, content, idRecipe }];
+    await AsyncStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error('Error guardando notificación:', error);
+  }
+};
+
 // Pantalla de notificaciones
 const NotificationsScreen = () => {
+  const router = useRouter();
+  const [notifications, setNotifications] = useState<
+    { id: string; content: string; idRecipe: string }[]
+  >([]);
+
+  const loadNotifications = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(NOTIFICATIONS_KEY);
+      if (stored) {
+        setNotifications(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('Error cargando notificaciones:', error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadNotifications();
+    }, [])
+  );
+
   return (
     <View className="flex-1 bg-gray-100 p-4">
       <Text className="text-2xl font-bold text-gray-900 mb-4">Notificaciones</Text>
@@ -43,12 +84,20 @@ const NotificationsScreen = () => {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <NotificationItem
-            icon="heart" // Nombre del ícono
+            icon="heart"
             title={item.content}
             message={`ID Receta: ${item.idRecipe}`}
+               onPress={() =>
+                router.push(`/recipes/${item.idRecipe}`)
+              }
           />
         )}
         contentContainerStyle={{ paddingBottom: 20 }}
+        ListEmptyComponent={
+          <Text className="text-center text-gray-500 mt-10">
+            No hay notificaciones disponibles.
+          </Text>
+        }
       />
     </View>
   );

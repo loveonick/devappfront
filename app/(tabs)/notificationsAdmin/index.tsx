@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
 
 const NotificationsScreen = () => {
-  // Estado de las notificaciones
+  const router = useRouter();
+
   const [notifications, setNotifications] = useState([
-    { id: '1', content: 'Nueva receta de', idUser: '358', idRecipe: '5' }, // admin
+    { id: '1', content: 'Nueva receta de', idUser: '358', idRecipe: '5' },
     { id: '77', content: 'Nueva receta de', idUser: '222', idRecipe: '33' },
     { id: '9', content: 'Nueva receta de', idUser: '987', idRecipe: '1' },
   ]);
 
-  // Función para eliminar una notificación
   const removeNotification = (id: string) => {
     setNotifications((prevNotifications) =>
       prevNotifications.filter((notification) => notification.id !== id)
@@ -22,25 +23,22 @@ const NotificationsScreen = () => {
     id,
     title,
     message,
+    idRecipe,
   }: {
     id: string;
     title: string;
     message: string;
+    idRecipe: string;
   }) => {
     return (
       <TouchableOpacity className="bg-white rounded-lg p-4 mb-4 shadow-sm flex-row items-center">
-        {/* Ícono de notificación a la izquierda */}
         <Icon name="notifications" size={40} color="#f43f5e" className="mr-4" />
-
-        {/* Contenido de la notificación */}
         <View style={{ flex: 1 }}>
           <Text className="text-lg font-semibold text-gray-800">{title}</Text>
           <Text className="text-sm text-gray-600 mt-1">{message}</Text>
         </View>
 
-        {/* Botones a la derecha */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
-          {/* Botón de aceptar */}
           <TouchableOpacity
             onPress={() => removeNotification(id)}
             style={{
@@ -56,7 +54,6 @@ const NotificationsScreen = () => {
             <Icon name="checkmark" size={18} color="white" />
           </TouchableOpacity>
 
-          {/* Botón de eliminar */}
           <TouchableOpacity
             onPress={() => removeNotification(id)}
             style={{
@@ -72,8 +69,9 @@ const NotificationsScreen = () => {
             <Icon name="trash" size={18} color="white" />
           </TouchableOpacity>
 
-          {/* Botón de ver más con texto "Ver" */}
+          {/* 🔵 Botón "Ver" que navega a la receta */}
           <TouchableOpacity
+            onPress={() => router.push(`/recipes/${idRecipe}`)}
             style={{
               backgroundColor: '#3b82f6',
               flexDirection: 'row',
@@ -101,6 +99,7 @@ const NotificationsScreen = () => {
         renderItem={({ item }) => (
           <NotificationItem
             id={item.id}
+            idRecipe={item.idRecipe}
             title={`${item.content} Usuario ${item.idUser}`}
             message={`ID Receta: ${item.idRecipe}`}
           />
