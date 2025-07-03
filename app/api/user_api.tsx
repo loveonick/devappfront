@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system';
 const BASE_URL = 'http://localhost:8080/api';
 
 export const getUserById = async (userId: string) => {
@@ -55,11 +56,16 @@ export const updateUserProfile = async (
   const formData = new FormData();
   formData.append('username', userData.username);
   formData.append('email', userData.email);
+
   if (userData.image && !userData.image.startsWith('http')) {
+    const fileUri = userData.image;
+    const fileName = fileUri.split('/').pop() || 'profile.jpg';
+    const mimeType = 'image/jpeg'; // O usar un helper para detectar tipo según extensión
+
     formData.append('image', {
-      uri: userData.image,
-      name: 'profile.jpg',
-      type: 'image/jpeg',
+      uri: fileUri,
+      type: mimeType,
+      name: fileName,
     } as any);
   }
 
@@ -67,7 +73,15 @@ export const updateUserProfile = async (
     method: 'PUT',
     body: formData,
   });
+
   if (!response.ok) throw new Error('Error al actualizar perfil');
   const updatedUser = await response.json();
-  return updatedUser.user;
+
+  return {
+    _id: updatedUser.user._id,
+    username: updatedUser.user.username,
+    email: updatedUser.user.email,
+    image: updatedUser.user.imgUrl,
+    favorites: updatedUser.user.favorites,
+  };
 };
