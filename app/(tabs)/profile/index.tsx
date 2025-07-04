@@ -60,12 +60,8 @@ const ProfileScreen = () => {
       <ScrollView className="flex-1 bg-white px-4 py-6">
         {/* Perfil */}
         <View className="flex-col sm:flex-row items-center sm:items-start mb-6">
-          {user ? (
-            <Image
-              source={require('../../../assets/profileExample.jpg')}
-              className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4"
-              resizeMode="cover"
-            />
+          {user?.image ? (
+            <Image source={{ uri: user.image }} className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4" resizeMode="cover" />
           ) : (
             <View className="w-20 h-20 rounded-full bg-gray-200 mb-2 sm:mb-0 sm:mr-4" />
           )}
