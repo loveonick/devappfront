@@ -1,4 +1,4 @@
-const url = 'http://192.168.1.43:8080/api';
+const url = 'http://dda1-backend-git-master-fedegonzalo16s-projects.vercel.app/api';
 
 export const getQualificationsByRecipeId = async (recipeId) => {
     try {

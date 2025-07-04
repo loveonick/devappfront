@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
-  TextInput
+  TextInput,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecipeCard from '../../../components/RecipeCard';
@@ -46,7 +47,13 @@ const Buscar = () => {
   const { recipes } = useRecipeContext();
   const router = useRouter();
   const routerBack = {
-    back: () => window.history.back(),
+    back: () => {
+      if (Platform.OS === 'web') {
+        window.history.back();
+      } else {
+        router.back(); // Funciona en mobile con expo-router
+      }
+    },
   };
 
   // Obtener todos los ingredientes únicos de las recetas

@@ -1,4 +1,4 @@
-const BASE_URL = 'http://192.168.1.43:8080/api';
+const BASE_URL = 'http://dda1-backend-git-master-fedegonzalo16s-projects.vercel.app/api';
 
 export const getUserById = async (userId: string) => {
   const response = await fetch(`${BASE_URL}/users/${userId}`, { method: 'GET' });
