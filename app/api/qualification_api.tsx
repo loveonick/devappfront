@@ -1,4 +1,4 @@
-const url = 'http://dda1-backend-git-master-fedegonzalo16s-projects.vercel.app/api';
+const url = 'https://dda1-backend.onrender.com/api';
 
 export const getQualificationsByRecipeId = async (recipeId) => {
     try {

@@ -1,4 +1,4 @@
-const BASE_URL = 'http://dda1-backend-git-master-fedegonzalo16s-projects.vercel.app/api';
+const BASE_URL = 'https://dda1-backend.onrender.com//api';
 
 export const getUserById = async (userId: string) => {
   const response = await fetch(`${BASE_URL}/users/${userId}`, { method: 'GET' });
