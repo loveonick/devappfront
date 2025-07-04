@@ -1,6 +1,5 @@
 import { FlatList, Image, Text, TouchableOpacity, View, ScrollView, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import SearchBar from '../../components/SearchBar';
 import { useRouter } from 'expo-router';
 
 import RecipeCard from '../../components/RecipeCard';
@@ -55,7 +54,6 @@ const Index = () => {
       } catch (err) {
         console.error('Error al cargar recetas:', err);
         setRecipes([]);
-        //setRecipes(data.recipes || []);
       } finally {
         setLoading(false);
       }
@@ -69,6 +67,7 @@ const Index = () => {
       selectedDishType === 'Todos' || (r.tags && r.tags.includes(selectedDishType));
     return matchDishType;
   });
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-colorfondo">
@@ -101,21 +100,26 @@ const Index = () => {
             style={{ width: 70, height: 70 }}
             resizeMode="contain"
           />
+
+          {/* SearchBar no editable que redirige */}
           <View className="flex-1 ml-4">
-            <TouchableOpacity onPress={() => router.push('/search')}>
-              <SearchBar
-                placeholder="Buscar recetas..."
-                value=""
-                onChangeText={() => {}}
-              />
+            <TouchableOpacity 
+              onPress={() => router.push('/search')}
+              activeOpacity={0.7}
+              className="w-full"
+            >
+              <View className="bg-white rounded-full px-4 py-2 flex-row items-center">
+                <Icon name="search-outline" size={20} color="#888" />
+                <Text className="ml-2 text-gray-500">Buscar recetas...</Text>
+              </View>
             </TouchableOpacity>
           </View>
+
           <TouchableOpacity onPress={() => router.push('/notificationsUser')}>
             <View className="ml-4">
               <MaterialIcons name="notifications-none" size={24} color="black" />
             </View>
           </TouchableOpacity>
-
         </View>
 
         <FlatList

@@ -1,5 +1,4 @@
-import * as FileSystem from 'expo-file-system';
-const BASE_URL = 'http://localhost:8080/api';
+const BASE_URL = 'http://192.168.1.43:8080/api';
 
 export const getUserById = async (userId: string) => {
   const response = await fetch(`${BASE_URL}/users/${userId}`, { method: 'GET' });

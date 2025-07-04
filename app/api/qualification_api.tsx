@@ -1,4 +1,4 @@
-const url = 'http://localhost:8080/api';
+const url = 'http://192.168.1.43:8080/api';
 
 export const getQualificationsByRecipeId = async (recipeId) => {
     try {
