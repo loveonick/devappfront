@@ -1,4 +1,4 @@
-const url = 'http://localhost:8080/api';
+const url = 'http://dda1-backend-git-master-fedegonzalo16s-projects.vercel.app/api';
 
 export const loginApi = async (email,password) => {
     try{
