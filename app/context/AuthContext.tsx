@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const user = await loginApi(email, password);
       const mappedUser = {
         _id: user._id,
-        username: user.username,
+        username: user.name,
         email: user.email,
         image: user.imgUrl,
         favorites: user.favorites,
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const user = await registerApi(username, email, password);
       const mappedUser = {
         _id: user._id,
-        username: user.username,
+        username: user.name,
         email: user.email,
         image: user.imgUrl,
         favorites: user.favorites,
