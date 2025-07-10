@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await AsyncStorage.setItem('user', JSON.stringify(mappedUser));
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'No se pudo iniciar sesión');
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -121,7 +121,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await AsyncStorage.setItem('user', JSON.stringify(mappedUser));
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'No se pudo registrar');
+      throw error;
     } finally {
       setIsLoading(false);
     }
