@@ -1,3 +1,4 @@
+//const url = 'http://localhost:8080/api';
 const BASE_URL = 'https://dda1-backend.onrender.com//api';
 
 export const getUserById = async (userId: string) => {
