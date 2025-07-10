@@ -7,7 +7,7 @@ const PostLoginSplash = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace('/splash/introA'); 
+      router.replace('/introA'); 
     }, 2000); // 2 segundos
 
     return () => clearTimeout(timer);
