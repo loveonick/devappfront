@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
-import { loginApi } from '../api/auth_api'; 
+import { loginApi,registerApi } from '../api/auth_api';
 import { updateUserProfile, getFavorites, addFavoriteAPI, removeFavoriteAPI, getUserById } from '../api/user_api';
 
 type User = {
@@ -109,9 +109,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (username: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      const newUser = { username, email };
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      // setUser(newUser); // TODO: Implementar registro
+      const user = await registerApi(username, email, password);
+      const mappedUser = {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        image: user.imgUrl,
+        favorites: user.favorites,
+      };
+      setUser(mappedUser);
+      await AsyncStorage.setItem('user', JSON.stringify(mappedUser));
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'No se pudo registrar');
