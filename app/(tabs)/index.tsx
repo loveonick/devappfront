@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import NetInfo from '@react-native-community/netinfo';
 
 const dishTypes = [
+  "Todos",
   "Entrada",
   "Plato principal",
   "Guarnición",

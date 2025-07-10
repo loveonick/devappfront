@@ -115,7 +115,7 @@ const Buscar = () => {
       .filter(([_, v]) => v === 'exclude')
       .map(([k]) => k);
 
-    const matchIncludeTags = includeTags.every((tag) => r.tags.includes(tag));
+    const matchIncludeTags =  includeTags.length === 0 || includeTags.every((tag) => r.tags.includes(tag));
     const hasExcludeTags = excludeTags.some((tag) => r.tags.includes(tag));
 
     // Filtro por ingredientes excluidos
