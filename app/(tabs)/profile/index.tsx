@@ -1,6 +1,6 @@
-import React, { useState,useEffect,useCallback } from 'react';
+import React, { useState,useEffect,useCallback} from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, Modal,SafeAreaView } from 'react-native';
 import RecipeCard from '../../../components/RecipeCard';
 
 import { useRouter } from 'expo-router';
@@ -58,6 +58,7 @@ const ProfileScreen = () => {
   }, [user, activeTab]);
   return (
     <>
+    <SafeAreaView className='flex-1 bg-colorfondo'>
       <ScrollView className="flex-1 bg-white px-4 py-6">
         {/* Perfil */}
         <View className="flex-col sm:flex-row items-center sm:items-start mb-6">
@@ -73,13 +74,21 @@ const ProfileScreen = () => {
         </View>
 
         {/* Botones */}
-        <View className="flex-row justify-between flex-wrap gap-y-2 mb-4">
+        <View className="flex-row justify-around flex-wrap gap-y-2 mb-4">
           <TouchableOpacity
             className="bg-colorboton px-4 py-2 rounded-md"
             onPress={() => router.push('/(tabs)/profile/edit')}
           >
             <Text className="text-white font-semibold">Editar perfil</Text>
           </TouchableOpacity>
+          {user?.role === 'admin' && (
+            <TouchableOpacity
+              className="bg-green-700 px-4 py-2 rounded-md"
+              onPress={() => router.push('/notifications')}
+            >
+              <Text className="text-white font-semibold">Panel Admin</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             className="bg-colorboton px-4 py-2 rounded-md"
             onPress={() => setShowLogoutConfirm(true)}
@@ -166,6 +175,7 @@ const ProfileScreen = () => {
           </View>
         </View>
       </Modal>
+    </SafeAreaView>
     </>
   );
 };

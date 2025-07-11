@@ -1,5 +1,5 @@
-//const url = 'http://localhost:8080/api';
-const url = 'https://dda1-backend.onrender.com/api';
+const url = 'http://localhost:8080/api';
+//const url = 'https://dda1-backend.onrender.com/api';
 
 export const getRecipes = async () => {
   try {
@@ -168,6 +168,93 @@ export const getRecipesByUserId = async (userId: string) => {
     return recipes;
   } catch (error) {
     console.error('Error fetching recipes by user ID:', error);
+    throw error;
+  }
+};
+
+export const getPendingRecipes = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+    };
+
+    const response = await fetch(`${url}/recipes/pending`, requestOptions);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    
+    const data = await response.json();
+    const recipes = data.recipes.map((r) => ({
+      id: r._id,
+      title: r.name,
+      description: r.description,
+      imageUri: r.image,
+      ingredients: r.ingredients,
+      steps: r.procedures,
+      tags: r.tags,
+      date: r.createdAt,
+      isApproved: r.isApproved,
+      author: r.author?.name ?? 'Desconocido',
+    }));
+    return recipes;
+  } catch (error) {
+    console.error('Error fetching pending recipes:', error);
+    throw error;
+  }
+};
+
+export const getApprovedRecipes = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    const requestOptions = {
+      method: "GET",
+      headers: myHeaders,
+    };
+
+    const response = await fetch(`${url}/recipes/approved`, requestOptions);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    
+    const data = await response.json();
+    const recipes = data.recipes.map((r) => ({
+      id: r._id,
+      title: r.name,
+      description: r.description,
+      imageUri: r.image,
+      ingredients: r.ingredients,
+      steps: r.procedures,
+      tags: r.tags,
+      date: r.createdAt,
+      author: r.author?.name ?? 'Desconocido',
+    }));
+    return recipes;
+  } catch (error) {
+    console.error('Error fetching approved recipes:', error);
+    throw error;
+  }
+};
+
+export const approveRecipe = async (recipeId) => {
+  try {
+    console.log('Approving recipe with ID:', recipeId);
+    const requestOptions = {
+      method: "PUT",
+    };
+
+    const response = await fetch(`${url}/recipes/${recipeId}/approve`, requestOptions);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error approving recipe:', error);
     throw error;
   }
 };

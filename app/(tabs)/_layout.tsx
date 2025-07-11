@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useAuth } from '../context/AuthContext';
@@ -55,13 +55,6 @@ const TabsLayout = () => {
       />
       <Tabs.Screen
         name="search"
-        options={{
-          href: null, // Oculta esta tab
-          headerShown: false,
-        }}
-      />
-      <Tabs.Screen
-        name="masterprofile"
         options={{
           href: null, // Oculta esta tab
           headerShown: false,

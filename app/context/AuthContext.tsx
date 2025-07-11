@@ -10,6 +10,7 @@ type User = {
   email: string;
   image?: string;
   favorites: Recipe[];
+  role?: 'user' | 'admin';
 };
 
 type Recipe = {
@@ -95,6 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: user.email,
         image: user.imgUrl,
         favorites: user.favorites,
+        role:user.role || 'user',
       };
       setUser(mappedUser);
       await AsyncStorage.setItem('user', JSON.stringify(mappedUser));
@@ -116,6 +118,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: user.email,
         image: user.imgUrl,
         favorites: user.favorites,
+        role: user.role || 'user',
       };
       setUser(mappedUser);
       await AsyncStorage.setItem('user', JSON.stringify(mappedUser));

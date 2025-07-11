@@ -8,7 +8,7 @@ import Tags from '../../components/Tags';
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../context/AuthContext';
-import { getRecipes } from '../api/recipe_api';
+import { getRecipes,getApprovedRecipes } from '../api/recipe_api';
 import { useRecipeContext } from '../context/RecipeContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import NetInfo from '@react-native-community/netinfo';
@@ -49,7 +49,7 @@ const Index = () => {
       }
 
       try {
-        const data = await getRecipes();
+        const data = await getApprovedRecipes(); //cambiado para obtener recetas aprobadas
         setRecipes(data || []);
       } catch (err) {
         console.error('Error al cargar recetas:', err);

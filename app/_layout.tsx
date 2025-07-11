@@ -25,6 +25,10 @@ export default function RootLayout() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
+            name="(admin)"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
             name="recipes/[id]"
             options={{
               title: 'Receta',
