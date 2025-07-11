@@ -63,14 +63,14 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="masterprofile"
         options={{
-          href: null, // Oculta esta tab
+          //href: null, // Oculta esta tab
           headerShown: false,
         }}
       />
       <Tabs.Screen
         name="notificationsUser"
         options={{
-          href: null, // Oculta esta tab
+          //href: null, // Oculta esta tab
           headerShown: false,
         }}
       />

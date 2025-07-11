@@ -185,6 +185,39 @@ const handleCommentSubmit = async () => {
     );
   };
 
+  const handleSaveRecipe = async () => {
+     console.log('Intentando guardar receta...');
+    try {
+      const stored = await AsyncStorage.getItem('RECIPES_STORAGE');
+      const storedRecipes: Recipe[] = stored ? JSON.parse(stored) : [];
+
+      const alreadySaved = storedRecipes.some((r) => r.id === recipe?.id);
+      if (alreadySaved) {
+        Alert.alert('Ya guardada', 'Esta receta ya fue guardada para ver sin conexión.');
+        return;
+      }
+
+      if (storedRecipes.length >= 10) {
+        Alert.alert('Límite alcanzado', 'Solo puedes guardar hasta 10 recetas.');
+        return;
+      }
+
+      const recipeToSave = {
+        ...recipe,
+        date: new Date().toISOString(), // Aseguramos que tenga fecha
+        author: user?.username || 'Anónimo'
+      };
+
+      const updatedRecipes = [...storedRecipes, recipeToSave];
+      await AsyncStorage.setItem('RECIPES_STORAGE', JSON.stringify(updatedRecipes));
+      Alert.alert('Receta guardada', 'La receta se guardó correctamente.');
+
+    } catch (error) {
+      console.error('Error al guardar receta:', error);
+      Alert.alert('Error', 'No se pudo guardar la receta.');
+    }
+  };
+
   return (
     <ScrollView className="flex-1 bg-white">
       {/* Imagen principal */}
@@ -300,6 +333,22 @@ const handleCommentSubmit = async () => {
             <Text className="text-gray-500 text-center py-4">No hay comentarios aún</Text>
           )}
         </View>
+        <Pressable
+  onPress={handleSaveRecipe}
+  className="bg-[#6B0A1D] rounded-lg px-6 py-3 items-center mt-2 mb-10"
+>
+  <Pressable
+  onPress={async () => {
+    const data = await AsyncStorage.getItem('RECIPES_STORAGE');
+    console.log('Recetas guardadas:', data);
+    Alert.alert('Guardadas', data ? `Hay ${JSON.parse(data).length} recetas` : 'No hay recetas guardadas');
+  }}
+  className="bg-gray-500 rounded-lg px-4 py-2 items-center mt-2"
+>
+  <Text className="text-white font-medium">Ver recetas guardadas (debug)</Text>
+</Pressable>
+  <Text className="text-white font-bold text-lg">Guardar para ver sin conexión</Text>
+</Pressable>
       </View>
     </ScrollView>
   );
