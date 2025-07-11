@@ -10,21 +10,9 @@ const EditProfileScreen = () => {
 
   const [username, setUsername] = useState(user?.username || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [image, setImage] = useState<string | null>(user?.image || null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const handlePickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets.length > 0) {
-      setImage(result.assets[0].uri);
-    }
-  };
 
   const handleSave = () => {
     if (!username.trim()) {
@@ -38,10 +26,7 @@ const EditProfileScreen = () => {
     try {
       setLoading(true);
       if (!user?._id) return;
-      console.log("Enviando username:", username);
-      console.log("Enviando email:", email);
-      console.log("Enviando imagen:", image);
-      await updateUser({ username, email, image });
+      await updateUser({ username, email });
       setShowConfirmModal(false);
       setShowSuccessModal(true);
     } catch (err) {
@@ -61,15 +46,9 @@ const EditProfileScreen = () => {
     <View className="flex-1 bg-white p-4">
       <Text className="text-xl font-bold mb-4">Editar Perfil</Text>
 
-      <TouchableOpacity onPress={handlePickImage} className="self-center mb-4">
-        {image ? (
-          <Image source={{ uri: image }} className="w-24 h-24 rounded-full" />
-        ) : (
-          <View className="w-24 h-24 rounded-full bg-gray-300 items-center justify-center">
-            <Text>Cargar Imagen</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+      <View className="self-center mb-4">
+        <Image source={require('../../../assets/user.jpg')} className="w-24 h-24 rounded-full" />
+      </View>
 
       <Text className="mb-1">Nombre</Text>
       <TextInput

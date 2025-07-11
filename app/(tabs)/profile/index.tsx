@@ -34,6 +34,7 @@ const ProfileScreen = () => {
     useCallback(() => {
       const loadUserFromStorage = async () => {
         const storedUser = await AsyncStorage.getItem('user');
+        console.log('Stored user:', storedUser);
         if (storedUser) {
           setUser(JSON.parse(storedUser));
         }
@@ -61,7 +62,7 @@ const ProfileScreen = () => {
         {/* Perfil */}
         <View className="flex-col sm:flex-row items-center sm:items-start mb-6">
           {user?.image ? (
-            <Image source={{ uri: user.image }} className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4" resizeMode="cover" />
+            <Image source={require('../../../assets/user.jpg') } className="w-20 h-20 rounded-full mb-2 sm:mb-0 sm:mr-4" resizeMode="cover" />
           ) : (
             <View className="w-20 h-20 rounded-full bg-gray-200 mb-2 sm:mb-0 sm:mr-4" />
           )}
