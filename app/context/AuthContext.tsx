@@ -74,6 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: updatedUser.email,
         image: updatedUser.imgUrl,
         favorites: updatedUser.favorites,
+        role:updatedUser.role || 'user',
       };
       setUser(mappedUser);
       await AsyncStorage.setItem('user', JSON.stringify(mappedUser));

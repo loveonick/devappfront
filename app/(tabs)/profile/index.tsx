@@ -109,7 +109,7 @@ const ProfileScreen = () => {
             className={`px-3 py-1 rounded-full ${activeTab === 'guardadas' ? 'bg-colorboton' : 'bg-gray-200'}`}
             onPress={() => setActiveTab('guardadas')}
           >
-            <Text className={`font-medium ${activeTab === 'guardadas' ? 'text-white' : 'text-black'}`}>Guardadas</Text>
+            <Text className={`font-medium ${activeTab === 'guardadas' ? 'text-white' : 'text-black'}`}>Favoritos</Text>
           </TouchableOpacity>
         </View>
 

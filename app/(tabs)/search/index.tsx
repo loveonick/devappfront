@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   Modal,
   ScrollView,
   TextInput,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import RecipeCard from '../../../components/RecipeCard';
@@ -15,6 +16,7 @@ import SearchBar from '../../../components/SearchBar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Checkbox from 'expo-checkbox';
+import { getApprovedRecipes } from '../../api/recipe_api';
 
 import { useRouter } from 'expo-router';
 import { useRecipeContext } from '../../context/RecipeContext';
@@ -36,6 +38,7 @@ type TagFilterState = 'include' | 'exclude' | 'none';
 const Buscar = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<'alphabetical' | 'recent'>('alphabetical');
   const [tagFilters, setTagFilters] = useState<Record<string, TagFilterState>>(() => {
     const initial: Record<string, TagFilterState> = {};
@@ -44,8 +47,25 @@ const Buscar = () => {
   });
   const [excludedIngredients, setExcludedIngredients] = useState<string[]>([]);
   const [ingredientInput, setIngredientInput] = useState<string>('');
-  const { recipes } = useRecipeContext();
+  //const { recipes } = useRecipeContext();
+  const [recipes, setRecipes] = useState([]);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const data = await getApprovedRecipes(); // Reemplaza con tu API real
+        setRecipes(data || []);
+      } catch (error) {
+        console.error('Error fetching recipes:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipes();
+  }, []);
+
   const routerBack = {
     back: () => {
       if (Platform.OS === 'web') {
@@ -127,6 +147,14 @@ const Buscar = () => {
 
     return matchSearch && matchIncludeTags && !hasExcludeTags && !hasExcludedIngredients;
   });
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-colorfondo">
+        <ActivityIndicator size="large" color="#6B0A1D" />
+        <Text className="mt-4 text-gray-700">Cargando...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">

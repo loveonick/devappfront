@@ -30,7 +30,8 @@ const Index = () => {
   const [selectedDishType, setSelectedDishType] = useState('Todos');
   const { user } = useAuth();
 
-  const { recipes, setRecipes } = useRecipeContext();
+  //const { recipes, setRecipes } = useRecipeContext(); este es para el async storage
+  const [recipes, setRecipes] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(null);
 
@@ -114,12 +115,7 @@ const Index = () => {
               </View>
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity onPress={() => router.push('/notificationsUser')}>
-            <View className="ml-4">
-              <MaterialIcons name="notifications-none" size={24} color="black" />
-            </View>
-          </TouchableOpacity>
+          
         </View>
 
         <FlatList
