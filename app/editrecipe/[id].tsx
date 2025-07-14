@@ -22,6 +22,7 @@ export default function EditRecipe() {
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null); 
+  const [fileName, setFileName] = useState('photo.jpg'); // Nombre por defecto para la imagen
   const [type, setType] = useState('');
   const [ingredients, setIngredients] = useState<{ name: string; amount: string; unit: string }[]>([]);
   const [steps, setSteps] = useState<{ description: string; imageUri?: string }[]>([]);
@@ -45,6 +46,7 @@ export default function EditRecipe() {
         setIngredients(recipe.ingredients || []);
         setSteps(recipe.steps || []);
         setTags(recipe.tags || []);
+        setType(recipe.tags[0] || '');
       } catch (err) {
         console.error(err);
         Alert.alert('Error', 'No se pudo cargar la receta');
@@ -68,7 +70,11 @@ export default function EditRecipe() {
 
     if (!result.canceled) {
       const asset = result.assets[0];
-      setImageUri(asset.uri);
+      const uri = asset.uri;
+      const fileName = uri.split('/').pop() || 'photo.jpg';
+      setFileName(fileName);
+      const match = /\.(\w+)$/.exec(fileName);
+      setImageUri(uri);
       if (Platform.OS === 'web') {
         setImageFile(asset.file ?? null);
       }
@@ -93,18 +99,10 @@ export default function EditRecipe() {
           }
       } else {
           if (imageUri) {
-            const filename = imageUri.split('/').pop();
-            const match = /\.(\w+)$/.exec(filename ?? '');
-            const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-            formData.append('media', {
-              uri: imageUri,
-              name: filename ?? 'photo.jpg',
-              type,
-            } as any); // el 'as any' es necesario para RN FormData
+            formData.append('media', imageFile, fileName );
           };
         };
-      
+
       // 1. Crear cada ingrediente y obtener su _id
       const ingredientIds = await Promise.all(
         ingredients.map(async (ing) => {
@@ -121,6 +119,7 @@ export default function EditRecipe() {
           }
         })
       );
+
       const stepsIds = await Promise.all(
         steps.map(async (step) => {
           try {
@@ -134,6 +133,12 @@ export default function EditRecipe() {
           }
         })
       );
+      //tags
+      const autoTags = [
+        type, // tipo de plato
+        ...ingredients.map((ing) => ing.name), // nombres de ingredientes
+      ];
+      formData.append('tags', JSON.stringify(autoTags));
       formData.append('name', title);
       formData.append('description', description);
       formData.append('type', type || '');
@@ -238,8 +243,17 @@ export default function EditRecipe() {
               newIngs[idx].unit = text;
               setIngredients(newIngs);
             }}
-            className="w-20 border border-gray-300 rounded-md px-3 py-2"
+            className="w-20 border border-gray-300 rounded-md px-3 py-2 mr-1"
           />
+          <TouchableOpacity
+            onPress={() => {
+              const filtered = ingredients.filter((_, i) => i !== idx);
+              setIngredients(filtered);
+            }}
+            className="p-2 bg-red-200 rounded-md"
+          >
+            <Text className="text-red-800 font-bold">X</Text>
+          </TouchableOpacity>
         </View>
       ))}
       <TouchableOpacity
@@ -252,22 +266,33 @@ export default function EditRecipe() {
       </TouchableOpacity>
 
       <Text className="font-semibold mb-2">Pasos de preparación</Text>
-      {steps.map((step, idx) => (
-        <View key={idx} className="mb-4">
+    {steps.map((step, idx) => (
+      <View key={idx} className="mb-4">
+        <View className="flex-row justify-between items-center mb-1">
           <Text className="font-medium">Paso {idx + 1}</Text>
-          <TextInput
-            placeholder="Descripción del paso"
-            value={step.description}
-            onChangeText={(text) => {
-              const newSteps = [...steps];
-              newSteps[idx].description = text;
-              setSteps(newSteps);
+          <TouchableOpacity
+            onPress={() => {
+              const filtered = steps.filter((_, i) => i !== idx);
+              setSteps(filtered);
             }}
-            multiline
-            className="border border-gray-300 rounded-md px-3 py-2 h-20"
-          />
+            className="px-2 py-1 bg-red-200 rounded-md"
+          >
+            <Text className="text-red-800 font-bold">Eliminar</Text>
+          </TouchableOpacity>
         </View>
-      ))}
+        <TextInput
+          placeholder="Descripción del paso"
+          value={step.description}
+          onChangeText={(text) => {
+            const newSteps = [...steps];
+            newSteps[idx].description = text;
+            setSteps(newSteps);
+          }}
+          multiline
+          className="border border-gray-300 rounded-md px-3 py-2 h-20"
+        />
+      </View>
+    ))}
       <TouchableOpacity
         onPress={() => setSteps([...steps, { description: '' }])}
         className="mb-6"
