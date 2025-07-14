@@ -21,6 +21,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "package": "com.shaking.CookingBook"
+      "edgeToEdgeEnabled": true,
       "package": "com.bamm25.CookingBook"
     },
     "web": {
@@ -29,6 +31,13 @@
     },
     "plugins": [
       "expo-router"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "43e86e2e-eb24-43cf-bc27-946646c09439"
+      }
+    }
     ],
     "extra": {
       "router": {},
