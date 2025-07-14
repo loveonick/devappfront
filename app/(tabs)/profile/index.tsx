@@ -1,6 +1,6 @@
 import React, { useState,useEffect,useCallback} from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, Image, TouchableOpacity, ScrollView, Modal,SafeAreaView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, Modal,SafeAreaView, ActivityIndicator } from 'react-native';
 import RecipeCard from '../../../components/RecipeCard';
 
 import { useRouter } from 'expo-router';
@@ -17,6 +17,9 @@ const ProfileScreen = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutMessage, setShowLogoutMessage] = useState(false);
   const [userRecipes, setUserRecipes] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
   const savedRecipes = user?.favorites?.map(mapRecipe) || [];
   const displayedRecipes = activeTab === 'mis-recetas' ? userRecipes : savedRecipes;
 
@@ -44,11 +47,16 @@ const ProfileScreen = () => {
   );
   useEffect(() => {
     const fetchUserRecipes = async () => {
+      setIsLoading(true);
+      setErrorMessage('');
       try {
         const userRecipes = await getRecipesByUserId(user._id);
         setUserRecipes(userRecipes); 
       } catch (error) {
         console.error(error);
+        setErrorMessage('No se pudieron cargar tus recetas.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -113,29 +121,42 @@ const ProfileScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Recetas */}
-        {displayedRecipes.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            onPress={() =>
-              router.push({
-                pathname: '/recipes/[id]',
-                params: { id: item.id },
-              })
-            }
-            className="mb-4"
-          >
-            <RecipeCard
-              recipeId={item.id}
-              imgsrc={{ uri: item.imageUri }}
-              title={item.title}
-              description={item.description}
-              tags={item.tags}
-              author={item.author}
-              date={item.date.toString()}
-            />
-          </TouchableOpacity>
-        ))}
+        {/* Estado de carga */}
+        {isLoading ? (
+          <View className="mt-10 items-center">
+            <ActivityIndicator size="large" color="#9D5C63" />
+            <Text className="text-gray-600 mt-2">Cargando recetas...</Text>
+          </View>
+        ) : errorMessage ? (
+          <View className="mt-10 items-center">
+            <Text className="text-red-600 font-semibold">{errorMessage}</Text>
+          </View>
+        ) : displayedRecipes.length === 0 ? (
+          <Text className="text-center text-gray-500 mt-10">No hay recetas para mostrar.</Text>
+        ) : (
+          displayedRecipes.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() =>
+                router.push({
+                  pathname: '/recipes/[id]',
+                  params: { id: item.id },
+                })
+              }
+              className="mb-4"
+            >
+              <RecipeCard
+                recipeId={item.id}
+                imgsrc={{ uri: item.imageUri }}
+                title={item.title}
+                description={item.description}
+                tags={item.tags}
+                author={item.author}
+                date={item.date.toString()}
+              />
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
 
       {/* Modal confirmación cierre de sesión */}
