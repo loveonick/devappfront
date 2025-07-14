@@ -28,6 +28,8 @@ export default function EditRecipe() {
   const [steps, setSteps] = useState<{ description: string; imageUri?: string }[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const loadRecipe = async () => {
@@ -83,80 +85,99 @@ export default function EditRecipe() {
 
   const handleUpdate = async () => {
     try {
+
       setIsLoading(true);
+      setErrorMessage('');
+      setUpdating(true);
 
-      if (!title.trim()) {
-        Alert.alert('Error', 'El nombre de la receta es requerido');
-        return;
-      }
-      // creamos un formData para enviar al backend
-      const formData = new FormData();
+    if (!title.trim()) {
+      setErrorMessage('El nombre de la receta es obligatorio');
+      return;
+    }
 
-      //img
-      if (Platform.OS === 'web') {
-          if (imageFile) {
-            formData.append('media', imageFile); // file ya es un File válido
-          }
-      } else {
-          if (imageUri) {
-            formData.append('media', imageFile, fileName );
-          };
+    if (!type.trim()) {
+      setErrorMessage('Debe seleccionar el tipo de plato');
+      return;
+    }
+
+    if (ingredients.length === 0 || ingredients.some(ing => !ing.name.trim())) {
+      setErrorMessage('Debe agregar al menos un ingrediente con nombre');
+      return;
+    }
+
+    if (steps.length === 0 || steps.some(step => !step.description.trim())) {
+      setErrorMessage('Debe agregar al menos un paso con descripción');
+      return;
+    }
+    // creamos un formData para enviar al backend
+    const formData = new FormData();
+
+    //img
+    if (Platform.OS === 'web') {
+        if (imageFile) {
+          formData.append('media', imageFile); // file ya es un File válido
+        }
+    } else {
+        if (imageUri) {
+          formData.append('media', imageFile, fileName );
         };
+      };
 
-      // 1. Crear cada ingrediente y obtener su _id
-      const ingredientIds = await Promise.all(
-        ingredients.map(async (ing) => {
-          try {
-            const created = await addIngredient({
-              name: ing.name,
-              quantity: ing.amount,
-              unit: ing.unit,
-            });
-            return created._id;
-          } catch (err) {
-            console.error('Error al crear ingrediente:', ing, err);
-            throw new Error("No se pudo crear el ingrediente: " + ing.name);
-          }
-        })
-      );
+    // 1. Crear cada ingrediente y obtener su _id
+    const ingredientIds = await Promise.all(
+      ingredients.map(async (ing) => {
+        try {
+          const created = await addIngredient({
+            name: ing.name,
+            quantity: ing.amount,
+            unit: ing.unit,
+          });
+          return created._id;
+        } catch (err) {
+          console.error('Error al crear ingrediente:', ing, err);
+          throw new Error("No se pudo crear el ingrediente: " + ing.name);
+        }
+      })
+    );
 
-      const stepsIds = await Promise.all(
-        steps.map(async (step) => {
-          try {
-            const newFormData = new FormData();
-            newFormData.append('content', step.description);
-            const created = await addProcedure(newFormData);
-            return created._id;
-          } catch (err) {
-            console.error('Error al crear paso:', step, err);
-            throw new Error("No se pudo crear el paso: " + step.description);
-          }
-        })
-      );
-      //tags
-      const autoTags = [
-        type, // tipo de plato
-        ...ingredients.map((ing) => ing.name), // nombres de ingredientes
-      ];
-      formData.append('tags', JSON.stringify(autoTags));
-      formData.append('name', title);
-      formData.append('description', description);
-      formData.append('type', type || '');
-      formData.append('ingredients', JSON.stringify(ingredientIds));
-      formData.append('procedures', JSON.stringify(stepsIds));
+    const stepsIds = await Promise.all(
+      steps.map(async (step) => {
+        try {
+          const newFormData = new FormData();
+          newFormData.append('content', step.description);
+          const created = await addProcedure(newFormData);
+          return created._id;
+        } catch (err) {
+          console.error('Error al crear paso:', step, err);
+          throw new Error("No se pudo crear el paso: " + step.description);
+        }
+      })
+    );
+    //tags
+    const autoTags = [
+      type, // tipo de plato
+      ...ingredients.map((ing) => ing.name), // nombres de ingredientes
+    ];
+    formData.append('tags', JSON.stringify(autoTags));
+    formData.append('name', title);
+    formData.append('description', description);
+    formData.append('type', type || '');
+    formData.append('ingredients', JSON.stringify(ingredientIds));
+    formData.append('procedures', JSON.stringify(stepsIds));
 
 
 
-      // 3. Enviar al backend
-      await updateRecipe(id as string, formData);
+    // 3. Enviar al backend
+    await updateRecipe(id as string, formData);
 
-      Alert.alert('Éxito', 'Receta actualizada correctamente');
-      router.back();
+    Alert.alert('Éxito', 'Receta actualizada correctamente');
+    router.back();
     } catch (err: any) {
       console.error('Error al actualizar:', err);
       Alert.alert('Error', err.message || 'No se pudo actualizar la receta');
     } finally {
       setIsLoading(false);
+      setUpdating(false);
     }
   };
   
@@ -310,10 +331,16 @@ export default function EditRecipe() {
 
         <TouchableOpacity
           onPress={handleUpdate}
-          className="bg-[#9D5C63] rounded-md px-6 py-3"
+          disabled={updating}
+          className={`rounded-md px-6 py-3 ${updating ? 'bg-gray-400' : 'bg-[#9D5C63]'}`}
         >
-          <Text className="text-white font-bold">Aceptar cambios</Text>
+          <Text className="text-white font-bold">
+            {updating ? 'Actualizando...' : 'Aceptar cambios'}
+          </Text>
         </TouchableOpacity>
+        {errorMessage ? (
+          <Text className="text-red-600 text-center mt-2">{errorMessage}</Text>
+        ) : null}
       </View>
     </ScrollView>
   );
