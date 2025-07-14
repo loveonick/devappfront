@@ -20,7 +20,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.shaking.CookingBook"
     },
     "web": {
       "bundler": "metro",
@@ -28,6 +29,12 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "43e86e2e-eb24-43cf-bc27-946646c09439"
+      }
+    }
   }
 }

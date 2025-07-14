@@ -1,4 +1,5 @@
-const url = 'https://dda1-backend.onrender.com/api';
+//const url = 'https://dda1-backend.onrender.com/api';
+const url = 'http://localhost:8080/api'
 
 export const getQualificationsByRecipeId = async (recipeId) => {
     try {

@@ -1,4 +1,5 @@
-const url = 'https://dda1-backend.onrender.com/api';
+//const url = 'https://dda1-backend.onrender.com/api';
+const url = 'http://localhost:8080/api'
 
 export const getRecipes = async () => {
   try {
@@ -110,7 +111,7 @@ export const createProcedure = async (procedureData: FormData) => {
 
 export const createIngredient = async (ingredientData: {
   name: string;
-  quantity?: string;
+  amount?: string;
   unit?: string;
 }) => {
   try {
@@ -169,4 +170,85 @@ export const getRecipesByUserId = async (userId: string) => {
     console.error('Error fetching recipes by user ID:', error);
     throw error;
   }
+};
+
+export const getRecipeByName = async (name: string) => {
+  try {
+    const response = await fetch(`${url}/recipes/by-name?name=${encodeURIComponent(name.trim())}`);
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    return data.recipe || null;
+  } catch (error) {
+    console.error("Error al obtener receta por nombre:", error);
+    return null;
+  }
+};
+
+type Ingredient = {
+  name: string;
+  amount: string;
+  unit: string;
+};
+
+type Step = {
+  description: string;
+  imageUri?: string;
+};
+
+export type RecipeUpdateData = {
+  name: string;
+  description: string;
+  imageUri?: string | null;
+  type?: string;
+  ingredients: Ingredient[];
+  steps: Step[]; 
+  tags: string[];
+};
+
+export const updateRecipe = async (id: string, recipeData: RecipeUpdateData) => {
+  const formData = new FormData();
+
+  formData.append('name', recipeData.name);
+  formData.append('description', recipeData.description);
+  formData.append('type', recipeData.type || '');
+  formData.append('tags', JSON.stringify(recipeData.tags));
+
+  formData.append('ingredients', JSON.stringify(
+    recipeData.ingredients.map((ing) => ({
+      "name": ing.name,
+      "amount": ing.amount,
+      "unit": ing.unit,
+    }))
+  ));
+
+  formData.append('procedures', JSON.stringify(
+    recipeData.steps.map((step, index) => ({
+      stepNumber: index + 1,
+      content: step.description,
+    }))
+  ));
+
+  if (recipeData.imageUri && !recipeData.imageUri.startsWith('http')) {
+    const uri = recipeData.imageUri;
+    const name = uri.split('/').pop() || 'image.jpg';
+
+    formData.append('image', {
+      uri,
+      name,
+      type: 'image/jpeg',
+    } as any);
+  }
+
+  const response = await fetch(`${url}/recipes/${id}`, {
+    method: 'PUT', 
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Error al actualizar receta: ${errorText}`);
+  }
+
+  return response.json();
 };

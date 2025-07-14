@@ -34,6 +34,7 @@ interface RecipeContextType {
   draft: RecipeDraft;
   updateDraft: (data: Partial<RecipeDraft>) => void;
   clearDraft: () => void;
+  updateRecipe: (id: string, updatedRecipe: Partial<Recipe>) => void;
 }
 
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
@@ -83,18 +84,23 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
   
   const updateRecipe = (id: string, updatedRecipe: Partial<Recipe>) => {
-  setRecipesState(prev => prev.map(r => r.id === id ? {...r, ...updatedRecipe} : r));
+  setRecipesState(prev => 
+    prev.map(r => r.id === id ? { ...r, ...updatedRecipe } : r)
+  );
   };
-
+  
   const deleteRecipe = (id: string) => {
     setRecipesState(prev => prev.filter(r => r.id !== id));
   };
+
   const setRecipes = (recipes: Recipe[]) => {
     setRecipesState(recipes);
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
   }
+  
+  
   return (
-    <RecipeContext.Provider value={{ recipes, addRecipe, getRecipeById, setRecipes, draft, updateDraft, clearDraft }}>
+    <RecipeContext.Provider value={{ recipes, addRecipe, getRecipeById, setRecipes, draft, updateDraft, clearDraft, updateRecipe }}>
       {children}
     </RecipeContext.Provider>
   );
