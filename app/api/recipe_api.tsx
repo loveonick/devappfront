@@ -286,3 +286,16 @@ export const updateRecipe = async (id: string, recipeData: FormData) => {
 
   return response.json();
 };
+
+export const deleteRecipe = async (id: string) => {
+  const response = await fetch(`${url}/recipes/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Error al eliminar receta: ${errorText}`);
+  }
+
+  return response.json();
+};

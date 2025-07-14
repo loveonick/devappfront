@@ -84,7 +84,7 @@ const ProfileScreen = () => {
           {user?.role === 'admin' && (
             <TouchableOpacity
               className="bg-green-700 px-4 py-2 rounded-md"
-              onPress={() => router.push('/notifications')}
+              onPress={() => router.push('/adminboard')}
             >
               <Text className="text-white font-semibold">Panel Admin</Text>
             </TouchableOpacity>
