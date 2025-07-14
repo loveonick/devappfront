@@ -333,22 +333,8 @@ const handleCommentSubmit = async () => {
             <Text className="text-gray-500 text-center py-4">No hay comentarios aún</Text>
           )}
         </View>
-        <Pressable
-  onPress={handleSaveRecipe}
-  className="bg-[#6B0A1D] rounded-lg px-6 py-3 items-center mt-2 mb-10"
->
-  <Pressable
-  onPress={async () => {
-    const data = await AsyncStorage.getItem('RECIPES_STORAGE');
-    console.log('Recetas guardadas:', data);
-    Alert.alert('Guardadas', data ? `Hay ${JSON.parse(data).length} recetas` : 'No hay recetas guardadas');
-  }}
-  className="bg-gray-500 rounded-lg px-4 py-2 items-center mt-2"
->
-  <Text className="text-white font-medium">Ver recetas guardadas (debug)</Text>
-</Pressable>
-  <Text className="text-white font-bold text-lg">Guardar para ver sin conexión</Text>
-</Pressable>
+        
+
       </View>
     </ScrollView>
   );
