@@ -1,5 +1,5 @@
-//const url = 'http://localhost:8080/api';
-const url = 'https://dda1-backend.onrender.com/api';
+const url = 'http://localhost:8080/api';
+//const url = 'https://dda1-backend.onrender.com/api';
 
 export const getRecipes = async () => {
   try {
@@ -272,64 +272,11 @@ export const getRecipeByName = async (name: string) => {
   }
 };
 
-type Ingredient = {
-  name: string;
-  amount: string;
-  unit: string;
-};
-
-type Step = {
-  description: string;
-  imageUri?: string;
-};
-
-export type RecipeUpdateData = {
-  name: string;
-  description: string;
-  imageUri?: string | null;
-  type?: string;
-  ingredients: Ingredient[];
-  steps: Step[]; 
-  tags: string[];
-};
-
-export const updateRecipe = async (id: string, recipeData: RecipeUpdateData) => {
-  const formData = new FormData();
-
-  formData.append('name', recipeData.name);
-  formData.append('description', recipeData.description);
-  formData.append('type', recipeData.type || '');
-  formData.append('tags', JSON.stringify(recipeData.tags));
-
-  formData.append('ingredients', JSON.stringify(
-    recipeData.ingredients.map((ing) => ({
-      "name": ing.name,
-      "amount": ing.amount,
-      "unit": ing.unit,
-    }))
-  ));
-
-  formData.append('procedures', JSON.stringify(
-    recipeData.steps.map((step, index) => ({
-      stepNumber: index + 1,
-      content: step.description,
-    }))
-  ));
-
-  if (recipeData.imageUri && !recipeData.imageUri.startsWith('http')) {
-    const uri = recipeData.imageUri;
-    const name = uri.split('/').pop() || 'image.jpg';
-
-    formData.append('image', {
-      uri,
-      name,
-      type: 'image/jpeg',
-    } as any);
-  }
+export const updateRecipe = async (id: string, recipeData: FormData) => {
 
   const response = await fetch(`${url}/recipes/${id}`, {
     method: 'PUT', 
-    body: formData,
+    body: recipeData,
   });
 
   if (!response.ok) {

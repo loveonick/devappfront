@@ -1,11 +1,11 @@
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, Platform } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useRecipeContext } from '../context/RecipeContext';
 import { useAuth } from '../context/AuthContext';
-import { getRecipeById, updateRecipe, createIngredient } from '../api/recipe_api';
-import type { RecipeUpdateData } from '../api/recipe_api';
+import { getRecipeById, updateRecipe } from '../api/recipe_api';
+import { addIngredient, updateIngredient } from '../api/ingredient_api';
+import { addProcedure } from '../api/procedure_api';
 
 
 const DISH_TYPES = [
@@ -17,11 +17,11 @@ export default function EditRecipe() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
-  const { updateRecipe: RecipeUpdateData } = useRecipeContext();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null); 
   const [type, setType] = useState('');
   const [ingredients, setIngredients] = useState<{ name: string; amount: string; unit: string }[]>([]);
   const [steps, setSteps] = useState<{ description: string; imageUri?: string }[]>([]);
@@ -67,7 +67,11 @@ export default function EditRecipe() {
     });
 
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      setImageUri(asset.uri);
+      if (Platform.OS === 'web') {
+        setImageFile(asset.file ?? null);
+      }
     }
   };
 
@@ -79,37 +83,67 @@ export default function EditRecipe() {
         Alert.alert('Error', 'El nombre de la receta es requerido');
         return;
       }
+      // creamos un formData para enviar al backend
+      const formData = new FormData();
 
+      //img
+      if (Platform.OS === 'web') {
+          if (imageFile) {
+            formData.append('media', imageFile); // file ya es un File válido
+          }
+      } else {
+          if (imageUri) {
+            const filename = imageUri.split('/').pop();
+            const match = /\.(\w+)$/.exec(filename ?? '');
+            const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+            formData.append('media', {
+              uri: imageUri,
+              name: filename ?? 'photo.jpg',
+              type,
+            } as any); // el 'as any' es necesario para RN FormData
+          };
+        };
+      
       // 1. Crear cada ingrediente y obtener su _id
       const ingredientIds = await Promise.all(
         ingredients.map(async (ing) => {
           try {
-            const created = await createIngredient({
+            const created = await addIngredient({
               name: ing.name,
-              amount: ing.amount,
+              quantity: ing.amount,
               unit: ing.unit,
             });
             return created._id;
           } catch (err) {
             console.error('Error al crear ingrediente:', ing, err);
-            throw new Error(`No se pudo crear el ingrediente "${ing.name}"`);
+            throw new Error("No se pudo crear el ingrediente: " + ing.name);
           }
         })
       );
+      const stepsIds = await Promise.all(
+        steps.map(async (step) => {
+          try {
+            const newFormData = new FormData();
+            newFormData.append('content', step.description);
+            const created = await addProcedure(newFormData);
+            return created._id;
+          } catch (err) {
+            console.error('Error al crear paso:', step, err);
+            throw new Error("No se pudo crear el paso: " + step.description);
+          }
+        })
+      );
+      formData.append('name', title);
+      formData.append('description', description);
+      formData.append('type', type || '');
+      formData.append('ingredients', JSON.stringify(ingredientIds));
+      formData.append('procedures', JSON.stringify(stepsIds));
 
-      // 2. Preparar los datos para la actualización
-      const recipeData: RecipeUpdateData = {
-        name : title,
-        description,
-        imageUri: imageUri || undefined,
-        type,
-        ingredients, 
-        steps,
-        tags,
-      };
+
 
       // 3. Enviar al backend
-      await updateRecipe(id as string, recipeData);
+      await updateRecipe(id as string, formData);
 
       Alert.alert('Éxito', 'Receta actualizada correctamente');
       router.back();
