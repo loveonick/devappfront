@@ -1,6 +1,5 @@
 import { View, Text, Image, ScrollView, ActivityIndicator, TextInput, Pressable, Alert } from 'react-native';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { useRecipeContext } from '../context/RecipeContext';
 import { useCallback, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -8,6 +7,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { getRecipeById } from '../api/recipe_api';
 import { getQualificationsByRecipeId, addQualification } from '../api/qualification_api';
 import { saveNotification } from '../(tabs)/notificationsUser';
+
+import { useAuth } from '../context/AuthContext';
 
 interface Recipe {
   id: string;
@@ -28,16 +29,15 @@ interface Comment {
 export default function RecipeDetail() {
 
   const { id } = useLocalSearchParams();
-//  const { getRecipeById } = useRecipeContext();
+  const { user } = useAuth(); 
+  console.log('User in RecipeDetail:', user);
+
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ratingUser, setRatingUser] = useState(0);
   const [comment, setComment] = useState('');
-  const [userComments, setUserComments] = useState<Comment[]>([
-    { name: 'Laura Rodríguez', text: '¡Me encantó esta receta! Muy fácil de seguir.', stars: 5 },
-    { name: 'José Luis', text: 'Muy sabrosa, ¡la repetiré!', stars: 4 },
-  ]);
+  const [userComments, setUserComments] = useState<Comment[]>([]);
   const [portions, setPortions] = useState(2);
 
   const loadFromStorage = async (recipeId: string) => {
@@ -52,19 +52,19 @@ export default function RecipeDetail() {
     }
     return null;
   };
-
+  console.log(recipe);
   const calculateIngredients = () => {
     if (!recipe?.ingredients) return [];
-    
     return recipe.ingredients.map((ing) => ({
       ...ing,
-      quantity: (parseFloat(ing.quantity) * portions / 2)
+      quantity: (parseFloat(ing.quantity) * portions) / 2,
     }));
   };
 
-  const averageRating = userComments.length > 0
-    ? (userComments.reduce((sum, c) => sum + c.stars, 0) / userComments.length)
-    : 0;
+  const averageRating =
+    userComments.length > 0
+      ? userComments.reduce((sum, c) => sum + c.stars, 0) / userComments.length
+      : 0;
 
 const handleCommentSubmit = async () => {
   if (comment.trim() === '' || ratingUser === 0) {
@@ -72,23 +72,34 @@ const handleCommentSubmit = async () => {
     return;
   }
 
-  const newComment = await addQualification(id as string, {
-    userId: '685dd54ddd26ee167051cb6f', // Hardcodeado para testeo
-    star: ratingUser,
-    comment: comment,
-  });
+    if (!user) {
+      Alert.alert('Error', 'No hay un usuario autenticado.');
+      return;
+    }
 
-  // Agregar notificación localmente
-  await saveNotification({
-    id: Date.now().toString(),
-    content: 'Nuevo comentario en la receta',
-    idRecipe: id as string,
-  });
+    try {
+      const newQualification = await addQualification(id as string, {
+        userId: user._id,
+        star: ratingUser,
+        comment: comment,
+      });
 
-  setUserComments([newComment, ...userComments]);
-  setComment('');
-  setRatingUser(0);
-};
+      setUserComments([
+        {
+          name: user.username,
+          text: comment,
+          stars: ratingUser,
+        },
+        ...userComments,
+      ]);
+
+      setComment('');
+      setRatingUser(0);
+    } catch (err) {
+      console.error('Error al enviar comentario:', err);
+      Alert.alert('Error', 'No se pudo enviar el comentario.');
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -101,14 +112,14 @@ const handleCommentSubmit = async () => {
           const qualificationsFetched = await getQualificationsByRecipeId(id);
 
           if (isActive) {
-            
             setRecipe(recipeFetched);
-
-            setUserComments(qualificationsFetched.map(q => ({
-              name: q.author.name || 'Anónimo',
-              text: q.content,
-              stars: q.stars,
-            })));
+            setUserComments(
+              qualificationsFetched.map((q) => ({
+                name: q.author?.name || 'Anónimo',
+                text: q.content,
+                stars: q.stars,
+              }))
+            );
             setError(null);
           }
         } catch (err) {
@@ -157,16 +168,18 @@ const handleCommentSubmit = async () => {
 
   const ingredientsToDisplay = calculateIngredients();
 
-  const SimpleStarRating = ({ rating, onChange }: { rating: number; onChange?: (rating: number) => void }) => {
+  const SimpleStarRating = ({
+    rating,
+    onChange,
+  }: {
+    rating: number;
+    onChange?: (rating: number) => void;
+  }) => {
     return (
       <View className="flex-row">
         {[1, 2, 3, 4, 5].map((star) => (
           <Pressable key={star} onPress={() => onChange?.(star)}>
-            <Icon 
-              name={star <= rating ? 'star' : 'star-outline'} 
-              size={25} 
-              color="#FFD700" 
-            />
+            <Icon name={star <= rating ? 'star' : 'star-outline'} size={25} color="#FFD700" />
           </Pressable>
         ))}
       </View>
@@ -175,14 +188,10 @@ const handleCommentSubmit = async () => {
 
   return (
     <ScrollView className="flex-1 bg-white">
-      {/* Header con imagen */}
+      {/* Imagen principal */}
       <View className="relative">
         {recipe.imageUri ? (
-          <Image 
-            source={{ uri: recipe.imageUri }} 
-            className="w-full h-72" 
-            resizeMode="cover"
-          />
+          <Image source={{ uri: recipe.imageUri }} className="w-full h-72" resizeMode="cover" />
         ) : (
           <View className="w-full h-72 bg-gray-100 justify-center items-center">
             <Icon name="image-outline" size={50} color="#9D5C63" />
@@ -191,14 +200,12 @@ const handleCommentSubmit = async () => {
         )}
       </View>
 
-      {/* Contenido principal */}
+      {/* Contenido */}
       <View className="p-5">
-
-        {/* Título y descripción */}
         <Text className="text-3xl font-bold text-gray-800 mb-2">{recipe.title}</Text>
         <Text className="text-gray-600 mb-5">{recipe.description}</Text>
 
-        {/* Rating section */}
+        {/* Calificación promedio */}
         <View className="bg-[#FEF5EF] p-4 rounded-xl mb-6">
           <Text className="font-bold text-lg text-center text-gray-700 mb-2">Calificación general</Text>
           <View className="items-center">
@@ -213,15 +220,15 @@ const handleCommentSubmit = async () => {
         <View className="mb-6">
           <Text className="text-lg font-bold text-gray-800 mb-2">Porciones</Text>
           <View className="flex-row items-center bg-[#FEF5EF] p-3 rounded-lg">
-            <Pressable 
-              onPress={() => setPortions(prev => Math.max(1, prev - 1))}
+            <Pressable
+              onPress={() => setPortions((prev) => Math.max(1, prev - 1))}
               className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center"
             >
               <Icon name="remove" size={20} color="white" />
             </Pressable>
             <Text className="mx-4 text-lg font-semibold">{portions}</Text>
-            <Pressable 
-              onPress={() => setPortions(prev => Math.min(10, prev + 1))}
+            <Pressable
+              onPress={() => setPortions((prev) => Math.min(10, prev + 1))}
               className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center"
             >
               <Icon name="add" size={20} color="white" />
@@ -244,7 +251,7 @@ const handleCommentSubmit = async () => {
           </View>
         </View>
 
-        {/* Pasos de preparación */}
+        {/* Pasos */}
         <View className="mb-8">
           <Text className="text-xl font-bold text-gray-800 mb-3">Preparación</Text>
           {recipe.steps?.map((step, index) => (
@@ -252,10 +259,7 @@ const handleCommentSubmit = async () => {
               <Text className="font-bold text-[#9D5C63] mb-2">Paso {index + 1}</Text>
               <Text className="text-gray-700 mb-3">{step.description}</Text>
               {step.imageUri && (
-                <Image 
-                  source={{ uri: step.imageUri }} 
-                  className="w-full h-48 rounded-lg" 
-                />
+                <Image source={{ uri: step.imageUri }} className="w-full h-48 rounded-lg" />
               )}
             </View>
           ))}
@@ -276,8 +280,8 @@ const handleCommentSubmit = async () => {
             <Text className="font-semibold text-center text-gray-700 mb-2">Tu calificación</Text>
             <SimpleStarRating rating={ratingUser} onChange={setRatingUser} />
           </View>
-          <Pressable 
-            onPress={handleCommentSubmit} 
+          <Pressable
+            onPress={handleCommentSubmit}
             className="bg-[#9D5C63] rounded-lg px-6 py-3 items-center mt-2 mb-8"
           >
             <Text className="text-white font-bold text-lg">Publicar comentario</Text>

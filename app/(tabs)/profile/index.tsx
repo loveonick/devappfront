@@ -1,20 +1,24 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect,useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import RecipeCard from '../../../components/RecipeCard';
 
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
-import { useRecipeContext } from '../../context/RecipeContext';
 import {mapRecipe} from '../../../utils/mapRecipe';
 import { getRecipesByUserId } from '../../api/recipe_api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = () => {
   const router = useRouter();
-  const { user, logout, isFavorite, toggleFavorite } = useAuth();
+  const { user, setUser, logout} = useAuth();
 
   const [activeTab, setActiveTab] = useState<'mis-recetas' | 'guardadas'>('mis-recetas');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLogoutMessage, setShowLogoutMessage] = useState(false);
+  const [userRecipes, setUserRecipes] = useState([]);
+  const savedRecipes = user?.favorites?.map(mapRecipe) || [];
+  const displayedRecipes = activeTab === 'mis-recetas' ? userRecipes : savedRecipes;
 
   const handleConfirmLogout = async () => {
     setShowLogoutConfirm(false);
@@ -26,25 +30,31 @@ const ProfileScreen = () => {
   };
 
   //const { recipes } = useRecipeContext();
-  const [userRecipes, setUserRecipes] = useState([]);
-  const savedRecipes = user?.favorites?.map(mapRecipe) || [];
-  console.log(user);
-  const displayedRecipes = activeTab === 'mis-recetas' ? userRecipes : savedRecipes;
+  useFocusEffect(
+    useCallback(() => {
+      const loadUserFromStorage = async () => {
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      };
+      loadUserFromStorage();
+    }, [])
+  );
   useEffect(() => {
-  const fetchUserRecipes = async () => {
-    try {
-      const userRecipes = await getRecipesByUserId(user._id);
-      setUserRecipes(userRecipes); 
-      //setUserRecipes(userRecipes.map(mapRecipe)); // si usás `mapRecipe`
-    } catch (error) {
-      console.error(error);
-    }
-  };
+    const fetchUserRecipes = async () => {
+      try {
+        const userRecipes = await getRecipesByUserId(user._id);
+        setUserRecipes(userRecipes); 
+      } catch (error) {
+        console.error(error);
+      }
+    };
 
-  if (user && activeTab === 'mis-recetas') {
-    fetchUserRecipes();
-  }
-}, [user, activeTab]);
+    if (user && activeTab === 'mis-recetas') {
+      fetchUserRecipes();
+    }
+  }, [user, activeTab]);
   return (
     <>
       <ScrollView className="flex-1 bg-white px-4 py-6">

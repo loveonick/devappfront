@@ -16,6 +16,7 @@ const TabsLayout = () => {
     );
   }
 
+
   if (!user) {
     return <Redirect href="/auth/login" />;
   }

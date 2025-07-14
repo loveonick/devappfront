@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { AuthProvider } from './context/AuthContext'; // Asegurate de que esté bien la ruta
+import { AuthProvider } from './context/AuthContext';
 import './global.css';
 import { RecipeProvider } from './context/RecipeContext';
 

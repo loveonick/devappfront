@@ -12,12 +12,12 @@ type Recipe = {
 
 export const mapRecipe = (rawRecipe: any): Recipe => ({
   id: rawRecipe._id,
-  title: rawRecipe.name, // MongoDB tiene name, no title
+  title: rawRecipe.name,
   description: rawRecipe.description,
-  imageUri: rawRecipe.image, // MongoDB tiene image, no imageUri
-  ingredients: rawRecipe.ingredients || [], // si no están populados, será un array de ids
-  steps: rawRecipe.procedures || [],        // igual que arriba
+  imageUri: rawRecipe.image,
+  ingredients: rawRecipe.ingredients || [],
+  steps: rawRecipe.procedures || [],
   tags: rawRecipe.tags || [],
   date: rawRecipe.createdAt || new Date().toISOString(),
-  author: rawRecipe.author, // si viene como ID, lo podés mostrar o poblar si querés
+  author: rawRecipe.author.name, 
 });

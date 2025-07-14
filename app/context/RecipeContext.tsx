@@ -43,7 +43,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [recipes, setRecipesState] = useState<Recipe[]>([]);
   const [draft, setDraft] = useState<RecipeDraft>({});
 
-  // Cargar recetas al iniciar
+
   useEffect(() => {
     const loadRecipes = async () => {
       try {

@@ -33,8 +33,6 @@ const CreateNewPasswordScreen = () => {
         <Text className="text-white font-bold">Aceptar</Text>
       </TouchableOpacity>
 
-      {/* Links and Footer */}
-      {/* Reutiliza el diseño de la primera pantalla */}
     </View>
   );
 };

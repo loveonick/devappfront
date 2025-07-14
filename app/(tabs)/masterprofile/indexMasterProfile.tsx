@@ -4,11 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuth } from '../../context/AuthContext'; // Importar el contexto
+import { useAuth } from '../../context/AuthContext'; 
 
 const MasterProfile = () => {
   const router = useRouter();
-  const { logout } = useAuth(); // Usar el logout del contexto
+  const { logout } = useAuth(); 
 
   const [adminName, setAdminName] = useState('ADMIN');
   const [adminEmail, setAdminEmail] = useState('admin@gmail.com');
@@ -36,13 +36,13 @@ const MasterProfile = () => {
 
   const handleConfirmLogout = async () => {
     setShowLogoutConfirm(false);
-    await logout(); // Desloguear desde contexto
-    setShowLogoutMessage(true); // Mostrar mensaje de sesión cerrada
+    await logout(); 
+    setShowLogoutMessage(true);
   };
 
   const handleLogoutComplete = () => {
     setShowLogoutMessage(false);
-    // Si querés redirigir al login: router.replace('/login')
+    //router.replace('/login')
   };
 
   return (

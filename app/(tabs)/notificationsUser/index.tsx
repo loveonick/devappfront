@@ -58,7 +58,7 @@ export const saveNotification = async ({
 const NotificationsScreen = () => {
   const router = useRouter();
   const routerBack = {
-    back: () => window.history.back(), // O tu método real con expo-router
+    back: () => window.history.back(),
   };
   const [notifications, setNotifications] = useState<
     { id: string; content: string; idRecipe: string }[]
