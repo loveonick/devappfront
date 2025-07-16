@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { getRecipeById } from '../api/recipe_api';
 import { getQualificationsByRecipeId, addQualification } from '../api/qualification_api';
-import { saveNotification } from '../(tabs)/notificationsUser';
+//import { saveNotification } from '../(tabs)/notificationsUser';
 
 import { useAuth } from '../context/AuthContext';
 

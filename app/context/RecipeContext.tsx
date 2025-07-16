@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { } from "../api/recipe_api";
 
 interface RecipeDraft {
   title?: string;
@@ -11,7 +10,7 @@ interface RecipeDraft {
   steps?: { description: string; imageUri?: string }[];
   tags?: string[];
   type?: string;
-};
+}
 
 interface Recipe {
   id: string;
@@ -23,16 +22,20 @@ interface Recipe {
   tags: string[];
   date: string;
   author: string;
-};
+}
 
 interface RecipeContextType {
-  recipes: Recipe[];
+  storedRecipes: Recipe[];
   addRecipe: (recipe: Recipe) => Promise<void>;
   getRecipeById: (id: string) => Recipe | undefined;
   setRecipes: (recipes: Recipe[]) => void;
+  reloadStoredRecipes: () => Promise<void>;
 
   draft: RecipeDraft;
   updateDraft: (data: Partial<RecipeDraft>) => void;
+  alreadySaved: (recipe: Recipe) => boolean;
+  deleteRecipe: (id: string) => void;
+  deleteAllRecipes: () => Promise<void>;
   clearDraft: () => void;
   updateRecipe: (id: string, updatedRecipe: Partial<Recipe>) => void;
 }
@@ -41,35 +44,25 @@ const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
 const STORAGE_KEY = 'RECIPES_STORAGE';
 
 export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [recipes, setRecipesState] = useState<Recipe[]>([]);
+  const [storedRecipes, setRecipesState] = useState<Recipe[]>([]);
   const [draft, setDraft] = useState<RecipeDraft>({});
 
-
   useEffect(() => {
-    const loadRecipes = async () => {
-      try {
-        const savedRecipes = await AsyncStorage.getItem(STORAGE_KEY);
-        if (savedRecipes) {
-          setRecipesState(JSON.parse(savedRecipes));
-        }
-      } catch (error) {
-        console.error('Error loading recipes:', error);
-      }
-    };
-    loadRecipes();
+    reloadStoredRecipes();
   }, []);
 
-  // Guardar recetas cuando cambian
-  useEffect(() => {
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-  }, [recipes]);
-
-  const updateDraft = (data: Partial<RecipeDraft>) => {
-    setDraft(prev => ({ ...prev, ...data }));
+  const reloadStoredRecipes = async () => {
+    try {
+      const savedRecipes = await AsyncStorage.getItem(STORAGE_KEY);
+      if (savedRecipes) {
+        setRecipesState(JSON.parse(savedRecipes));
+      } else {
+        setRecipesState([]);
+      }
+    } catch (error) {
+      console.error('Error reloading recipes:', error);
+    }
   };
-  const clearDraft = () => {
-    setDraft({});
-  } ;
 
   const addRecipe = async (recipe: Recipe) => {
     setRecipesState(prev => {
@@ -79,28 +72,67 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  const getRecipeById = (id: string) => {
-    return recipes.find(r => r.id === id);
-  };
-  
-  const updateRecipe = (id: string, updatedRecipe: Partial<Recipe>) => {
-  setRecipesState(prev => 
-    prev.map(r => r.id === id ? { ...r, ...updatedRecipe } : r)
-  );
-  };
-  
   const deleteRecipe = (id: string) => {
-    setRecipesState(prev => prev.filter(r => r.id !== id));
+    setRecipesState(prev => {
+      const updated = prev.filter(r => r.id !== id);
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const deleteAllRecipes = async () => {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEY);
+      setRecipesState([]);
+    } catch (error) {
+      console.error('Error deleting all recipes:', error);
+    }
+  };
+
+  const alreadySaved = (recipe: Recipe) => {
+    return storedRecipes.some(r => r.id === recipe.id);
+  };
+
+  const getRecipeById = (id: string) => {
+    return storedRecipes.find(r => r.id === id);
+  };
+
+  const updateDraft = (data: Partial<RecipeDraft>) => {
+    setDraft(prev => ({ ...prev, ...data }));
+  };
+
+  const clearDraft = () => {
+    setDraft({});
+  };
+
+  const updateRecipe = (id: string, updatedRecipe: Partial<Recipe>) => {
+    setRecipesState(prev =>
+      prev.map(r => (r.id === id ? { ...r, ...updatedRecipe } : r))
+    );
   };
 
   const setRecipes = (recipes: Recipe[]) => {
     setRecipesState(recipes);
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-  }
-  
-  
+  };
+
   return (
-    <RecipeContext.Provider value={{ recipes, addRecipe, getRecipeById, setRecipes, draft, updateDraft, clearDraft, updateRecipe }}>
+    <RecipeContext.Provider
+      value={{
+        storedRecipes,
+        addRecipe,
+        alreadySaved,
+        getRecipeById,
+        deleteRecipe,
+        deleteAllRecipes,
+        setRecipes,
+        reloadStoredRecipes,
+        draft,
+        updateDraft,
+        clearDraft,
+        updateRecipe,
+      }}
+    >
       {children}
     </RecipeContext.Provider>
   );
