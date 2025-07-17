@@ -8,7 +8,7 @@ import Tags from '../../components/Tags';
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../context/AuthContext';
-import { getRecipes } from '../api/recipe_api';
+import { getRecipes,getApprovedRecipes } from '../api/recipe_api';
 import { useRecipeContext } from '../context/RecipeContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import NetInfo from '@react-native-community/netinfo';
@@ -30,7 +30,8 @@ const Index = () => {
   const [selectedDishType, setSelectedDishType] = useState('Todos');
   const { user } = useAuth();
 
-  const { recipes, setRecipes } = useRecipeContext();
+  //const { recipes, setRecipes } = useRecipeContext(); este es para el async storage
+  const [recipes, setRecipes] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(null);
 
@@ -49,7 +50,7 @@ const Index = () => {
       }
 
       try {
-        const data = await getRecipes();
+        const data = await getApprovedRecipes(); //cambiado para obtener recetas aprobadas
         setRecipes(data || []);
       } catch (err) {
         console.error('Error al cargar recetas:', err);
@@ -114,12 +115,7 @@ const Index = () => {
               </View>
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity onPress={() => router.push('/notificationsUser')}>
-            <View className="ml-4">
-              <MaterialIcons name="notifications-none" size={24} color="black" />
-            </View>
-          </TouchableOpacity>
+          
         </View>
 
         <FlatList

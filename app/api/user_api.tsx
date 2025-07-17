@@ -1,5 +1,5 @@
-//const BASE_URL = 'https://dda1-backend.onrender.com//api';
-const BASE_URL = 'http://localhost:8080/api'
+//const url = 'http://localhost:8080/api';
+const BASE_URL = 'https://dda1-backend.onrender.com/api';
 
 export const getUserById = async (userId: string) => {
   const response = await fetch(`${BASE_URL}/users/${userId}`, { method: 'GET' });
@@ -51,23 +51,11 @@ export const removeFavoriteAPI = async (userId: string, recipeId: string) => {
 
 export const updateUserProfile = async (
   userId: string,
-  userData: { username: string; email: string; image?: string | null }
+  userData: { username: string; email: string }
 ) => {
   const formData = new FormData();
   formData.append('username', userData.username);
   formData.append('email', userData.email);
-
-  if (userData.image && !userData.image.startsWith('http')) {
-    const fileUri = userData.image;
-    const fileName = fileUri.split('/').pop() || 'profile.jpg';
-    const mimeType = 'image/jpeg'; // O usar un helper para detectar tipo según extensión
-
-    formData.append('image', {
-      uri: fileUri,
-      type: mimeType,
-      name: fileName,
-    } as any);
-  }
 
   const response = await fetch(`${BASE_URL}/users/${userId}`, {
     method: 'PUT',
@@ -79,7 +67,7 @@ export const updateUserProfile = async (
 
   return {
     _id: updatedUser.user._id,
-    username: updatedUser.user.username,
+    username: updatedUser.user.name,
     email: updatedUser.user.email,
     image: updatedUser.user.imgUrl,
     favorites: updatedUser.user.favorites,

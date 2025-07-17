@@ -11,7 +11,7 @@ export default function IntroA() {
       <Text style={styles.text}>
         En Cooking Book encontrarás miles de nuevas recetas cada día.
       </Text>
-      <TouchableOpacity style={styles.button} onPress={() => router.push('../../splash/introB')}>
+      <TouchableOpacity style={styles.button} onPress={() => router.push('/introB')}>
         <Text style={styles.buttonText}>Continuar</Text>
       </TouchableOpacity>
     </View>

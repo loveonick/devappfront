@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { useAuth } from '../../context/AuthContext'; 
+import { useAuth } from '../context/AuthContext'; 
 
 const MasterProfile = () => {
   const router = useRouter();

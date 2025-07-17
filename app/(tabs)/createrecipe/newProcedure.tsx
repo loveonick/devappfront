@@ -105,6 +105,7 @@ export default function NewProcedureScreen() {
       formData.append('author', user._id);
 
       formData.append('type', draft.type ?? '');
+      formData.append('isApproved', user.role === 'admin' ? 'true' : 'false');
 
       if (Platform.OS === 'web') {
         if (draft.imageFile) {
