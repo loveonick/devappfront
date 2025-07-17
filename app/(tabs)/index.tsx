@@ -268,6 +268,7 @@ const Index = () => {
                       params: { id: item.id },
                     })
                   }
+                  activeOpacity={0.9}
                 >
                   <RecipeCard
                     recipeId={item.id}
