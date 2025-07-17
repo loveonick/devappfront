@@ -1,164 +1,184 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
 
 const RegisterScreen = () => {
+  type Errors = {
+    username?: string;
+    email?: string;
+    password?: string;
+    password2?: string;
+    general?: string;
+  };
 
-    type Errors = {
-        username?: string;
-        email?: string;
-        password?: string;
-        password2?: string;
-        general?: string;
-    };
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [password2, setPassword2] = useState('');
-    const [errors, setErrors] = useState<Errors>({});
-    const [suggestions, setSuggestions] = useState<string[]>([]);
-    const { register, user } = useAuth();
-    
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
+  const [errors, setErrors] = useState<Errors>({});
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const { register, user } = useAuth();
 
-    useEffect(() => {
-        if (user) {
-        router.replace('/(tabs)');
-        }
-    }, [user]);
+  useEffect(() => {
+    if (user) {
+      router.replace('/(tabs)');
+    }
+  }, [user]);
 
-    const handleRegister = async () => {
-        const newErrors: Errors = {};
+  const handleRegister = async () => {
+    const newErrors: Errors = {};
 
-        if (!username.trim()) newErrors.username = 'El nombre de usuario es obligatorio.';
-        if (!email.trim()) newErrors.email = 'El correo es obligatorio.';
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'El correo no es válido.';
-        if (!password.trim()) newErrors.password = 'La contraseña es obligatoria.';
-        if (!password2.trim()) newErrors.password2 = 'Repetir contraseña es obligatorio.';
-        else if (password !== password2) newErrors.password2 = 'Las contraseñas no coinciden.';
+    if (!username.trim()) newErrors.username = 'El nombre de usuario es obligatorio.';
+    if (!email.trim()) newErrors.email = 'El correo es obligatorio.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'El correo no es válido.';
+    if (!password.trim()) newErrors.password = 'La contraseña es obligatoria.';
+    if (!password2.trim()) newErrors.password2 = 'Repetir contraseña es obligatorio.';
+    else if (password !== password2) newErrors.password2 = 'Las contraseñas no coinciden.';
 
-        if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
-        }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
-        setErrors({}); // limpiar errores
+    setErrors({});
 
-        try {
-        await register(username.trim(), email.trim(), password);
-        } catch (err) {
-            console.log('Error al registrarse:', err);
-            if (err.message.toLowerCase().includes('username')) {
-                setErrors({ username: err.message });
-                setSuggestions(err.suggestions || []);
-            } else if (err.message.toLowerCase().includes('email')) {
-                setErrors({ email: err.message });
-            } else {
-                setErrors({ general: err.message || 'Error al registrarse.' });
-            }
-        }
-    };
+    try {
+      await register(username.trim(), email.trim(), password);
+    } catch (err) {
+      console.log('Error al registrarse:', err);
+      if (err.message.toLowerCase().includes('username')) {
+        setErrors({ username: err.message });
+        setSuggestions(err.suggestions || []);
+      } else if (err.message.toLowerCase().includes('email')) {
+        setErrors({ email: err.message });
+      } else {
+        setErrors({ general: err.message || 'Error al registrarse.' });
+      }
+    }
+  };
 
-    const inputClass = 'bg-white p-4 rounded-lg shadow-sm border';
+  const inputClass = 'bg-white p-4 rounded-lg shadow-sm border';
 
-    return (
-        <ScrollView className="flex-1 bg-colorfondo">
-        <View className="flex-1 bg-colorfondo items-center justify-center px-6">
-
+  return (
+    <KeyboardAvoidingView
+      className="flex-1 bg-colorfondo"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="flex-1 items-center justify-center px-6 pt-10 pb-24 min-h-[700px]">
             <View className="items-center mb-8 mt-10">
-            <Image
+              <Image
                 source={require('../../assets/logo.png')}
-                className="w-20 h-20 mb-2"
-            />
-            <Text className="text-xl font-bold">COOKING</Text>
-            <Text className="text-sm text-gray-500">Regístrate</Text>
+                className="w-24 h-24 mb-2"
+                resizeMode="contain"
+              />
+              <Text className="text-xl font-bold">COOKING</Text>
+              <Text className="text-sm text-gray-500">Regístrate</Text>
             </View>
 
-            <View className="w-full space-y-4">
-            <View>
+            <View className="w-full">
+              <View className="mb-4">
                 <TextInput
-                placeholder="Usuario"
-                value={username}
-                onChangeText={setUsername}
-                className={`${inputClass} ${errors.username ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Usuario"
+                  value={username}
+                  onChangeText={setUsername}
+                  className={`${inputClass} ${errors.username ? 'border-red-500' : 'border-gray-300'}`}
                 />
                 {errors.username && (
-                <Text className="text-red-500 text-sm mt-1">{errors.username}</Text>
+                  <Text className="text-red-500 text-sm mt-1">{errors.username}</Text>
                 )}
                 {suggestions.length > 0 && (
-                <View className="mt-1">
+                  <View className="mt-1">
                     <Text className="text-gray-600 text-sm">Sugerencias:</Text>
                     {suggestions.map((sugg) => (
-                    <TouchableOpacity key={sugg} onPress={() => setUsername(sugg)}>
+                      <TouchableOpacity key={sugg} onPress={() => setUsername(sugg)}>
                         <Text className="text-blue-500 underline text-sm">{sugg}</Text>
-                    </TouchableOpacity>
+                      </TouchableOpacity>
                     ))}
-                </View>
+                  </View>
                 )}
-            </View>
+              </View>
 
-            <View>
+              <View className="mb-4">
                 <TextInput
-                placeholder="Correo"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-                className={`${inputClass} ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Correo"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                  className={`${inputClass} ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                 />
                 {errors.email && (
-                <Text className="text-red-500 text-sm mt-1">{errors.email}</Text>
+                  <Text className="text-red-500 text-sm mt-1">{errors.email}</Text>
                 )}
-            </View>
+              </View>
 
-            <View>
+              <View className="mb-4">
                 <TextInput
-                placeholder="Contraseña"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                className={`${inputClass} ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Contraseña"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  className={`${inputClass} ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
                 />
                 {errors.password && (
-                <Text className="text-red-500 text-sm mt-1">{errors.password}</Text>
+                  <Text className="text-red-500 text-sm mt-1">{errors.password}</Text>
                 )}
-            </View>
+              </View>
 
-            <View>
+              <View className="mb-4">
                 <TextInput
-                placeholder="Repetir Contraseña"
-                secureTextEntry
-                value={password2}
-                onChangeText={setPassword2}
-                className={`${inputClass} ${errors.password2 ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Repetir Contraseña"
+                  secureTextEntry
+                  value={password2}
+                  onChangeText={setPassword2}
+                  className={`${inputClass} ${errors.password2 ? 'border-red-500' : 'border-gray-300'}`}
                 />
                 {errors.password2 && (
-                <Text className="text-red-500 text-sm mt-1">{errors.password2}</Text>
+                  <Text className="text-red-500 text-sm mt-1">{errors.password2}</Text>
                 )}
-            </View>
+              </View>
             </View>
 
             {errors.general && (
-            <Text className="text-red-500 text-center mt-4">{errors.general}</Text>
+              <Text className="text-red-500 text-center mt-4">{errors.general}</Text>
             )}
 
             <TouchableOpacity
-            className="bg-colorboton p-4 rounded-lg mt-6 w-full items-center"
-            onPress={handleRegister}
+              className="bg-colorboton p-4 rounded-lg mt-6 w-full items-center"
+              onPress={handleRegister}
             >
-            <Text className="text-white font-bold">Registrarse</Text>
+              <Text className="text-white font-bold">Registrarse</Text>
             </TouchableOpacity>
 
             <View className="w-full items-center mt-4 mb-4">
-            <TouchableOpacity className="mt-4" onPress={() => router.replace('/login')}>
+              <TouchableOpacity onPress={() => router.replace('/login')}>
                 <Text className="text-sm text-gray-500">
-                ¿Ya tienes cuenta? <Text className="text-colorboton">Inicia sesión</Text>
+                  ¿Ya tienes cuenta? <Text className="text-colorboton">Inicia sesión</Text>
                 </Text>
-            </TouchableOpacity>
+              </TouchableOpacity>
             </View>
-        </View>
+          </View>
         </ScrollView>
-    );
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
+  );
 };
 
 export default RegisterScreen;
