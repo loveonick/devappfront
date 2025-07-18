@@ -1,3 +1,5 @@
+import { sanitizeRecipe } from '../../utils/sanitizeRecipe'; 
+
 //const url = 'http://localhost:8080/api';
 const url = 'https://dda1-backend.onrender.com/api';
 
@@ -17,18 +19,21 @@ export const getRecipes = async () => {
     }
     const data = await response.json();
     //console.log('Fetched recipes:', data);
-    const mappedRecipes = data.recipes.map((r) => ({
-      id: r._id,
-      title: r.name,
-      description: r.description,
-      imageUri: r.image,
-      ingredients: r.ingredients,
-      steps: r.procedures,
-      tags: r.tags,
-      date: r.createdAt,
-      author: r.author?.name ?? 'Desconocido',
-    }));
-    return mappedRecipes;
+const mappedRecipes = data.recipes.map((r) =>
+  sanitizeRecipe({
+    id: r._id,
+    title: r.name,
+    description: r.description,
+    imageUri: r.image,
+    ingredients: r.ingredients,
+    steps: r.procedures,
+    tags: r.tags,
+    date: r.createdAt,
+    author: r.author?.name ?? 'Desconocido',
+  })
+);
+return mappedRecipes;
+
   } catch (error) {
     console.error('Error fetching recipes:', error);
     throw error;
@@ -69,9 +74,12 @@ export const getRecipeById = async (id) => {
         imageUri: p.media ? p.media : '',
       })) || [],
       tags: data.tags || [],
+      date: data.createdAt,
+      author: data.author?.name ?? 'Desconocido',
     };
 
-    return mapped;
+    return sanitizeRecipe(mapped);
+
   } catch (error) {
     console.error('Error fetching recipe by ID:', error);
     throw error;

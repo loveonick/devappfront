@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { sanitizeRecipe } from '../../utils/sanitizeRecipe'; // ajustá la ruta si es distinta
+
 
 interface RecipeDraft {
   title?: string;
@@ -12,7 +14,7 @@ interface RecipeDraft {
   type?: string;
 }
 
-interface Recipe {
+export interface Recipe {
   id: string;
   title: string;
   description: string;
@@ -64,13 +66,21 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const addRecipe = async (recipe: Recipe) => {
-    setRecipesState(prev => {
-      const newRecipes = [...prev, recipe];
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newRecipes));
-      return newRecipes;
-    });
-  };
+const addRecipe = async (recipe: Recipe) => {
+  if (!recipe.steps || recipe.steps.length === 0) {
+    console.warn('Intentando guardar una receta sin pasos');
+    return;
+  }
+
+  const sanitized = sanitizeRecipe(recipe);
+
+  setRecipesState((prev) => {
+    const newRecipes = [...prev, sanitized];
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newRecipes));
+    return newRecipes;
+  });
+};
+
 
   const deleteRecipe = (id: string) => {
     setRecipesState(prev => {

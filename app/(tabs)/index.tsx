@@ -10,6 +10,7 @@ import { getApprovedRecipes } from '../api/recipe_api';
 import RecipeCard from '../../components/RecipeCard';
 import RecipeWeek from '../../components/RecipeWeek';
 import Tags from '../../components/Tags';
+import { sanitizeRecipe } from '../../utils/sanitizeRecipe';
 
 const dishTypes = [
   'Todos',
@@ -70,25 +71,31 @@ const Index = () => {
     selectedDishType === 'Todos' || (r.tags && r.tags.includes(selectedDishType))
   );
 
-  const handleSaveRecipe = async (recipe: any) => {
-    if (!user || !user._id) {
-      Alert.alert('Error', 'No se pudo identificar al usuario.');
-      return;
-    }
+const handleSaveRecipe = async (recipe: any) => {
+  if (!user || !user._id) {
+    Alert.alert('Error', 'No se pudo identificar al usuario.');
+    return;
+  }
 
-    if (alreadySaved(recipe)) {
-      Alert.alert('Ya guardada', 'Esta receta ya fue guardada para ver sin conexión.');
-      return;
-    }
+  if (alreadySaved(recipe)) {
+    Alert.alert('Ya guardada', 'Esta receta ya fue guardada para ver sin conexión.');
+    return;
+  }
 
-    if (storedRecipes.length >= 10) {
-      Alert.alert('Límite alcanzado', 'Solo puedes guardar hasta 10 recetas.');
-      return;
-    }
+  if (storedRecipes.length >= 10) {
+    Alert.alert('Límite alcanzado', 'Solo puedes guardar hasta 10 recetas.');
+    return;
+  }
 
-    await addRecipe(recipe);
-    Alert.alert('Receta guardada', 'La receta se guardó correctamente.');
-  };
+  const preparedRecipe = sanitizeRecipe({
+    ...recipe,
+    author: recipe.author ?? user.username,
+    date: recipe.date ?? new Date().toISOString(),
+  });
+
+  await addRecipe(preparedRecipe);
+  Alert.alert('Receta guardada', 'La receta se guardó correctamente.');
+};
 
   if (loading) {
     return (
