@@ -122,11 +122,13 @@ const ProfileScreen = () => {
     <SafeAreaView className="flex-1 bg-colorfondo">
       <ScrollView className="flex-1 bg-white px-4 py-6">
         {/* Botón volver */}
-        <View className="mb-4">
-          <TouchableOpacity onPress={() => router.push('/(tabs)/')} className="flex-row items-center">
-            <Icon name="arrow-back" size={24} color="black" />
-            <Text className="ml-2 text-base text-black">Volver</Text>
-          </TouchableOpacity>
+        <View className='p-4 flex-1'>
+          <View className="mb-4">
+            <TouchableOpacity onPress={() => router.push('/(tabs)/')} className="flex-row items-center">
+              <Icon name="arrow-back" size={24} color="black" />
+              <Text className="ml-4 text-lg font-semibold">Volver</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Perfil */}
@@ -211,6 +213,7 @@ const ProfileScreen = () => {
                     params: { id: item.id },
                   })
                 }
+                activeOpacity={0.9}
               >
                 <RecipeCard
                   recipeId={item.id}
@@ -251,16 +254,16 @@ const ProfileScreen = () => {
         <View className="flex-1 justify-center items-center bg-black bg-opacity-50 px-10">
           <View className="bg-white rounded-xl p-6 w-full items-center">
             <Text className="text-lg font-semibold mb-4">¿Querés cerrar sesión?</Text>
-            <View className="flex-row space-x-4">
+            <View className="flex-row">
               <TouchableOpacity
                 onPress={() => setShowLogoutConfirm(false)}
-                className="px-4 py-2 bg-gray-300 rounded-md"
+                className="px-4 py-2 bg-gray-300 rounded-md mr-2"
               >
                 <Text className="text-black">No</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleConfirmLogout}
-                className="px-4 py-2 bg-colorboton rounded-md"
+                className="px-4 py-2 bg-colorboton rounded-md ml-2"
               >
                 <Text className="text-white">Sí</Text>
               </TouchableOpacity>
