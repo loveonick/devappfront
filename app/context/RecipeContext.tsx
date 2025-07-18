@@ -11,6 +11,7 @@ interface RecipeDraft {
   steps?: { description: string; imageUri?: string }[];
   tags?: string[];
   type?: string;
+  duplicateId?: string;
 };
 
 interface Recipe {

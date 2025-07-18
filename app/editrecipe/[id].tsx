@@ -1,11 +1,11 @@
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, Platform } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useRecipeContext } from '../context/RecipeContext';
 import { useAuth } from '../context/AuthContext';
-import { getRecipeById, updateRecipe, createIngredient } from '../api/recipe_api';
-import type { RecipeUpdateData } from '../api/recipe_api';
+import { getRecipeById, updateRecipe } from '../api/recipe_api';
+import { addIngredient, updateIngredient } from '../api/ingredient_api';
+import { addProcedure } from '../api/procedure_api';
 
 
 const DISH_TYPES = [
@@ -17,16 +17,19 @@ export default function EditRecipe() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { user } = useAuth();
-  const { updateRecipe: RecipeUpdateData } = useRecipeContext();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null); 
+  const [fileName, setFileName] = useState('photo.jpg'); // Nombre por defecto para la imagen
   const [type, setType] = useState('');
   const [ingredients, setIngredients] = useState<{ name: string; amount: string; unit: string }[]>([]);
   const [steps, setSteps] = useState<{ description: string; imageUri?: string }[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const loadRecipe = async () => {
@@ -45,6 +48,7 @@ export default function EditRecipe() {
         setIngredients(recipe.ingredients || []);
         setSteps(recipe.steps || []);
         setTags(recipe.tags || []);
+        setType(recipe.tags[0] || '');
       } catch (err) {
         console.error(err);
         Alert.alert('Error', 'No se pudo cargar la receta');
@@ -67,57 +71,113 @@ export default function EditRecipe() {
     });
 
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      const fileName = uri.split('/').pop() || 'photo.jpg';
+      setFileName(fileName);
+      const match = /\.(\w+)$/.exec(fileName);
+      setImageUri(uri);
+      if (Platform.OS === 'web') {
+        setImageFile(asset.file ?? null);
+      }
     }
   };
 
   const handleUpdate = async () => {
     try {
+
       setIsLoading(true);
+      setErrorMessage('');
+      setUpdating(true);
 
-      if (!title.trim()) {
-        Alert.alert('Error', 'El nombre de la receta es requerido');
-        return;
-      }
+    if (!title.trim()) {
+      setErrorMessage('El nombre de la receta es obligatorio');
+      return;
+    }
 
-      // 1. Crear cada ingrediente y obtener su _id
-      const ingredientIds = await Promise.all(
-        ingredients.map(async (ing) => {
-          try {
-            const created = await createIngredient({
-              name: ing.name,
-              amount: ing.amount,
-              unit: ing.unit,
-            });
-            return created._id;
-          } catch (err) {
-            console.error('Error al crear ingrediente:', ing, err);
-            throw new Error(`No se pudo crear el ingrediente "${ing.name}"`);
-          }
-        })
-      );
+    if (!type.trim()) {
+      setErrorMessage('Debe seleccionar el tipo de plato');
+      return;
+    }
 
-      // 2. Preparar los datos para la actualización
-      const recipeData: RecipeUpdateData = {
-        name : title,
-        description,
-        imageUri: imageUri || undefined,
-        type,
-        ingredients, 
-        steps,
-        tags,
+    if (ingredients.length === 0 || ingredients.some(ing => !ing.name.trim())) {
+      setErrorMessage('Debe agregar al menos un ingrediente con nombre');
+      return;
+    }
+
+    if (steps.length === 0 || steps.some(step => !step.description.trim())) {
+      setErrorMessage('Debe agregar al menos un paso con descripción');
+      return;
+    }
+    // creamos un formData para enviar al backend
+    const formData = new FormData();
+
+    //img
+    if (Platform.OS === 'web') {
+        if (imageFile) {
+          formData.append('media', imageFile); // file ya es un File válido
+        }
+    } else {
+        if (imageUri) {
+          formData.append('media', imageFile, fileName );
+        };
       };
 
-      // 3. Enviar al backend
-      await updateRecipe(id as string, recipeData);
+    // 1. Crear cada ingrediente y obtener su _id
+    const ingredientIds = await Promise.all(
+      ingredients.map(async (ing) => {
+        try {
+          const created = await addIngredient({
+            name: ing.name,
+            quantity: ing.amount,
+            unit: ing.unit,
+          });
+          return created._id;
+        } catch (err) {
+          console.error('Error al crear ingrediente:', ing, err);
+          throw new Error("No se pudo crear el ingrediente: " + ing.name);
+        }
+      })
+    );
 
-      Alert.alert('Éxito', 'Receta actualizada correctamente');
-      router.back();
+    const stepsIds = await Promise.all(
+      steps.map(async (step) => {
+        try {
+          const newFormData = new FormData();
+          newFormData.append('content', step.description);
+          const created = await addProcedure(newFormData);
+          return created._id;
+        } catch (err) {
+          console.error('Error al crear paso:', step, err);
+          throw new Error("No se pudo crear el paso: " + step.description);
+        }
+      })
+    );
+    //tags
+    const autoTags = [
+      type, // tipo de plato
+      ...ingredients.map((ing) => ing.name), // nombres de ingredientes
+    ];
+    formData.append('tags', JSON.stringify(autoTags));
+    formData.append('name', title);
+    formData.append('description', description);
+    formData.append('type', type || '');
+    formData.append('ingredients', JSON.stringify(ingredientIds));
+    formData.append('procedures', JSON.stringify(stepsIds));
+
+
+
+    // 3. Enviar al backend
+    await updateRecipe(id as string, formData);
+
+    Alert.alert('Éxito', 'Receta actualizada correctamente');
+    router.back();
     } catch (err: any) {
       console.error('Error al actualizar:', err);
       Alert.alert('Error', err.message || 'No se pudo actualizar la receta');
     } finally {
       setIsLoading(false);
+      setUpdating(false);
     }
   };
   
@@ -204,8 +264,17 @@ export default function EditRecipe() {
               newIngs[idx].unit = text;
               setIngredients(newIngs);
             }}
-            className="w-20 border border-gray-300 rounded-md px-3 py-2"
+            className="w-20 border border-gray-300 rounded-md px-3 py-2 mr-1"
           />
+          <TouchableOpacity
+            onPress={() => {
+              const filtered = ingredients.filter((_, i) => i !== idx);
+              setIngredients(filtered);
+            }}
+            className="p-2 bg-red-200 rounded-md"
+          >
+            <Text className="text-red-800 font-bold">X</Text>
+          </TouchableOpacity>
         </View>
       ))}
       <TouchableOpacity
@@ -218,22 +287,33 @@ export default function EditRecipe() {
       </TouchableOpacity>
 
       <Text className="font-semibold mb-2">Pasos de preparación</Text>
-      {steps.map((step, idx) => (
-        <View key={idx} className="mb-4">
+    {steps.map((step, idx) => (
+      <View key={idx} className="mb-4">
+        <View className="flex-row justify-between items-center mb-1">
           <Text className="font-medium">Paso {idx + 1}</Text>
-          <TextInput
-            placeholder="Descripción del paso"
-            value={step.description}
-            onChangeText={(text) => {
-              const newSteps = [...steps];
-              newSteps[idx].description = text;
-              setSteps(newSteps);
+          <TouchableOpacity
+            onPress={() => {
+              const filtered = steps.filter((_, i) => i !== idx);
+              setSteps(filtered);
             }}
-            multiline
-            className="border border-gray-300 rounded-md px-3 py-2 h-20"
-          />
+            className="px-2 py-1 bg-red-200 rounded-md"
+          >
+            <Text className="text-red-800 font-bold">Eliminar</Text>
+          </TouchableOpacity>
         </View>
-      ))}
+        <TextInput
+          placeholder="Descripción del paso"
+          value={step.description}
+          onChangeText={(text) => {
+            const newSteps = [...steps];
+            newSteps[idx].description = text;
+            setSteps(newSteps);
+          }}
+          multiline
+          className="border border-gray-300 rounded-md px-3 py-2 h-20"
+        />
+      </View>
+    ))}
       <TouchableOpacity
         onPress={() => setSteps([...steps, { description: '' }])}
         className="mb-6"
@@ -251,10 +331,16 @@ export default function EditRecipe() {
 
         <TouchableOpacity
           onPress={handleUpdate}
-          className="bg-[#9D5C63] rounded-md px-6 py-3"
+          disabled={updating}
+          className={`rounded-md px-6 py-3 ${updating ? 'bg-gray-400' : 'bg-[#9D5C63]'}`}
         >
-          <Text className="text-white font-bold">Aceptar cambios</Text>
+          <Text className="text-white font-bold">
+            {updating ? 'Actualizando...' : 'Aceptar cambios'}
+          </Text>
         </TouchableOpacity>
+        {errorMessage ? (
+          <Text className="text-red-600 text-center mt-2">{errorMessage}</Text>
+        ) : null}
       </View>
     </ScrollView>
   );

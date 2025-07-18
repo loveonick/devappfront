@@ -21,7 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.shaking.CookingBook"
+      "package": "com.bamm25.CookingBook"
     },
     "web": {
       "bundler": "metro",
@@ -33,7 +33,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "43e86e2e-eb24-43cf-bc27-946646c09439"
+        "projectId": "e59e5dba-4c69-4ec9-b33e-d28ab6676eb3"
       }
     }
   }

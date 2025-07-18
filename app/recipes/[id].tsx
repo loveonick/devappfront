@@ -6,7 +6,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { getRecipeById } from '../api/recipe_api';
 import { getQualificationsByRecipeId, addQualification } from '../api/qualification_api';
-import { saveNotification } from '../(tabs)/notificationsUser';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -21,6 +20,7 @@ interface Recipe {
 }
 
 interface Comment {
+  userId?: string;
   name: string;
   text: string;
   stars: number;
@@ -71,10 +71,17 @@ const handleCommentSubmit = async () => {
     return;
   }
 
-    if (!user) {
-      Alert.alert('Error', 'No hay un usuario autenticado.');
-      return;
-    }
+  if (!user) {  
+    Alert.alert('Error', 'No hay un usuario autenticado.');
+    return;
+  }
+  
+
+ const userAlreadyCommented = user ? userComments.some(c => c.userId === user._id) : false;
+  if (userAlreadyCommented) {
+    Alert.alert('Ya comentaste', 'No puedes escribir más de una reseña');
+    return;
+  }
 
     try {
       const newQualification = await addQualification(id as string, {
@@ -114,6 +121,7 @@ const handleCommentSubmit = async () => {
             setRecipe(recipeFetched);
             setUserComments(
               qualificationsFetched.map((q) => ({
+                userId: q.author?._id,
                 name: q.author?.name || 'Anónimo',
                 text: q.content,
                 stars: q.stars,
@@ -183,6 +191,39 @@ const handleCommentSubmit = async () => {
         ))}
       </View>
     );
+  };
+
+  const handleSaveRecipe = async () => {
+     console.log('Intentando guardar receta...');
+    try {
+      const stored = await AsyncStorage.getItem('RECIPES_STORAGE');
+      const storedRecipes: Recipe[] = stored ? JSON.parse(stored) : [];
+
+      const alreadySaved = storedRecipes.some((r) => r.id === recipe?.id);
+      if (alreadySaved) {
+        Alert.alert('Ya guardada', 'Esta receta ya fue guardada para ver sin conexión.');
+        return;
+      }
+
+      if (storedRecipes.length >= 10) {
+        Alert.alert('Límite alcanzado', 'Solo puedes guardar hasta 10 recetas.');
+        return;
+      }
+
+      const recipeToSave = {
+        ...recipe,
+        date: new Date().toISOString(), // Aseguramos que tenga fecha
+        author: user?.username || 'Anónimo'
+      };
+
+      const updatedRecipes = [...storedRecipes, recipeToSave];
+      await AsyncStorage.setItem('RECIPES_STORAGE', JSON.stringify(updatedRecipes));
+      Alert.alert('Receta guardada', 'La receta se guardó correctamente.');
+
+    } catch (error) {
+      console.error('Error al guardar receta:', error);
+      Alert.alert('Error', 'No se pudo guardar la receta.');
+    }
   };
 
   return (
@@ -263,10 +304,14 @@ const handleCommentSubmit = async () => {
             </View>
           ))}
         </View>
-
         {/* Comentarios */}
         <View>
           <Text className="text-xl font-bold text-gray-800 mb-3">Deja tu comentario</Text>
+
+          {user && userComments.some(c => c.userId === user._id) && (
+            <Text className="text-red-500 mb-2">Ya has comentado en esta receta</Text>
+          )}
+
           <TextInput
             className="border-[#F0B27A] border-2 p-3 rounded-lg text-gray-700"
             placeholder="Escribe tu comentario..."
@@ -275,10 +320,12 @@ const handleCommentSubmit = async () => {
             onChangeText={setComment}
             multiline
           />
+
           <View className="bg-[#FEF5EF] p-4 rounded-lg my-4 items-center">
             <Text className="font-semibold text-center text-gray-700 mb-2">Tu calificación</Text>
             <SimpleStarRating rating={ratingUser} onChange={setRatingUser} />
           </View>
+
           <Pressable
             onPress={handleCommentSubmit}
             className="bg-[#9D5C63] rounded-lg px-6 py-3 items-center mt-2 mb-8"
@@ -288,6 +335,7 @@ const handleCommentSubmit = async () => {
 
           {/* Lista de comentarios */}
           <Text className="text-xl font-bold text-gray-800 mb-3">Comentarios</Text>
+
           {userComments.length > 0 ? (
             userComments.map((c, idx) => (
               <View key={idx} className="bg-[#FEF5EF] p-4 rounded-lg mb-4">
