@@ -72,14 +72,39 @@ const addRecipe = async (recipe: Recipe) => {
     return;
   }
 
-  const sanitized = sanitizeRecipe(recipe);
+  // Asegurar que las cantidades sean strings con dos decimales desde el principio
+  const sanitizedIngredients = recipe.ingredients.map((i) => ({
+  name: i.name || '',
+  quantity: (() => {
+    const q = i.quantity;
+    const parsed = typeof q === 'number' ? q : parseFloat(q?.toString() || '0');
+    return parsed.toFixed(2);
+  })(),
+  unit: i.unit || '',
+}));
 
+  const sanitizedSteps = recipe.steps.map((s) => ({
+    description: s.description || '',
+    imageUri: s.imageUri || '',
+  }));
+
+  const sanitizedRecipe: Recipe = {
+    ...recipe,
+    ingredients: sanitizedIngredients,
+    steps: sanitizedSteps,
+    tags: recipe.tags || [],
+    author: recipe.author || 'Desconocido',
+    date: recipe.date || new Date().toISOString(),
+  };
+
+  // Guardar en estado y AsyncStorage
   setRecipesState((prev) => {
-    const newRecipes = [...prev, sanitized];
+    const newRecipes = [...prev, sanitizedRecipe];
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newRecipes));
     return newRecipes;
   });
 };
+
 
 
   const deleteRecipe = (id: string) => {
