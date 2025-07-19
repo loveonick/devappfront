@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, ActivityIndicator, TextInput, Pressable, Alert } from 'react-native';
+import { View, Text, Image, ScrollView, ActivityIndicator, TextInput, Pressable, Alert, Modal, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,7 +29,6 @@ interface Comment {
 export default function RecipeDetail() {
   const { id } = useLocalSearchParams();
   const { user } = useAuth(); 
-  console.log('User in RecipeDetail:', user);
 
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +37,7 @@ export default function RecipeDetail() {
   const [comment, setComment] = useState('');
   const [userComments, setUserComments] = useState<Comment[]>([]);
   const [portions, setPortions] = useState(2);
+  const [modalVisible, setModalVisible] = useState(false); // Modal para "ya comentaste"
 
   const loadFromStorage = async (recipeId: string) => {
     try {
@@ -51,7 +51,7 @@ export default function RecipeDetail() {
     }
     return null;
   };
-  console.log(recipe);
+
   const calculateIngredients = () => {
     if (!recipe?.ingredients) return [];
     return recipe.ingredients.map((ing) => ({
@@ -65,23 +65,22 @@ export default function RecipeDetail() {
       ? userComments.reduce((sum, c) => sum + c.stars, 0) / userComments.length
       : 0;
 
-const handleCommentSubmit = async () => {
-  if (comment.trim() === '' || ratingUser === 0) {
-    Alert.alert('Comentario incompleto', 'Por favor escribe un comentario y asigna una calificación.');
-    return;
-  }
+  const handleCommentSubmit = async () => {
+    if (comment.trim() === '' || ratingUser === 0) {
+      Alert.alert('Comentario incompleto', 'Por favor escribe un comentario y asigna una calificación.');
+      return;
+    }
 
-  if (!user) {  
-    Alert.alert('Error', 'No hay un usuario autenticado.');
-    return;
-  }
-  
+    if (!user) {  
+      Alert.alert('Error', 'No hay un usuario autenticado.');
+      return;
+    }
 
- const userAlreadyCommented = user ? userComments.some(c => c.userId === user._id) : false;
-  if (userAlreadyCommented) {
-    Alert.alert('Ya comentaste', 'No puedes escribir más de una reseña');
-    return;
-  }
+    const userAlreadyCommented = userComments.some(c => c.userId === user._id);
+    if (userAlreadyCommented) {
+      setModalVisible(true); // mostrar modal en vez de alert
+      return;
+    }
 
     try {
       const newQualification = await addQualification(id as string, {
@@ -130,9 +129,8 @@ const handleCommentSubmit = async () => {
             setError(null);
           }
         } catch (err) {
-          console.error('Error al cargar receta:', err);
           if (isActive) {
-            setError(err.message);
+            setError((err as Error).message);
             setRecipe(null);
           }
         } finally {
@@ -181,20 +179,17 @@ const handleCommentSubmit = async () => {
   }: {
     rating: number;
     onChange?: (rating: number) => void;
-  }) => {
-    return (
-      <View className="flex-row">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Pressable key={star} onPress={() => onChange?.(star)}>
-            <Icon name={star <= rating ? 'star' : 'star-outline'} size={25} color="#FFD700" />
-          </Pressable>
-        ))}
-      </View>
-    );
-  };
+  }) => (
+    <View className="flex-row">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Pressable key={star} onPress={() => onChange?.(star)}>
+          <Icon name={star <= rating ? 'star' : 'star-outline'} size={25} color="#FFD700" />
+        </Pressable>
+      ))}
+    </View>
+  );
 
   const handleSaveRecipe = async () => {
-     console.log('Intentando guardar receta...');
     try {
       const stored = await AsyncStorage.getItem('RECIPES_STORAGE');
       const storedRecipes: Recipe[] = stored ? JSON.parse(stored) : [];
@@ -212,7 +207,7 @@ const handleCommentSubmit = async () => {
 
       const recipeToSave = {
         ...recipe,
-        date: new Date().toISOString(), // Aseguramos que tenga fecha
+        date: new Date().toISOString(),
         author: user?.username || 'Anónimo'
       };
 
@@ -227,6 +222,27 @@ const handleCommentSubmit = async () => {
   };
 
   return (
+    <>
+      <Modal
+        transparent
+        visible={modalVisible}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black bg-opacity-40">
+          <View className="bg-white rounded-2xl p-6 w-4/5 shadow-lg items-center">
+            <Text className="text-lg font-semibold text-gray-800 mb-3">Ya comentaste</Text>
+            <Text className="text-gray-600 text-center mb-5">No puedes escribir más de una reseña para esta receta.</Text>
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              className="bg-[#9D5C63] px-4 py-2 rounded-lg"
+            >
+              <Text className="text-white font-semibold">Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      
     <ScrollView className="flex-1 bg-white">
       {/* Imagen principal */}
       <View className="relative">
@@ -308,10 +324,6 @@ const handleCommentSubmit = async () => {
         <View>
           <Text className="text-xl font-bold text-gray-800 mb-3">Deja tu comentario</Text>
 
-          {user && userComments.some(c => c.userId === user._id) && (
-            <Text className="text-red-500 mb-2">Ya has comentado en esta receta</Text>
-          )}
-
           <TextInput
             className="border-[#F0B27A] border-2 p-3 rounded-lg text-gray-700"
             placeholder="Escribe tu comentario..."
@@ -350,5 +362,6 @@ const handleCommentSubmit = async () => {
         </View>
       </View>
     </ScrollView>
+    </>
   );
 }
