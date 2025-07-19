@@ -63,7 +63,6 @@ const LoginScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={60} // ajusta este valor según tu header
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
@@ -122,7 +121,7 @@ const LoginScreen = () => {
             </TouchableOpacity>
 
             <View className="w-full items-center mt-4">
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/recover')}>
                 <Text className="text-sm text-colorboton">¿Olvidé mi contraseña?</Text>
               </TouchableOpacity>
 
@@ -135,7 +134,6 @@ const LoginScreen = () => {
 
           </View>
         </ScrollView>
-      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 };

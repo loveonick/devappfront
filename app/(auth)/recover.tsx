@@ -1,63 +1,70 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { sendRecoveryCodeApi } from '../api/auth_api';
+import { router } from 'expo-router';
 
 const RecoverPasswordScreen = () => {
+  const [email, setEmail] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleSendCode = async () => {
+    try {
+      setError(null); // Reiniciar errores anteriores
+
+      if (!email.trim()) {
+        throw new Error('El correo es obligatorio.');
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error('El correo no es válido.');
+      }
+
+      await sendRecoveryCodeApi(email.trim());
+      router.push(`/enterCode?email=${encodeURIComponent(email.trim())}`);
+    } catch (error: any) {
+      console.error('Error al enviar el código de recuperación:', error.message);
+      setError(error.message);
+    }
+  };
+
   return (
-    <View className="flex-1 bg-pink-50 items-center justify-center px-6">
-      {/* Logo */}
+    <View className="flex-1 bg-colorfondo items-center justify-center px-6">
       <View className="items-center mb-8">
         <Image
-          source={{ uri: 'https://your-logo-url-here.com/logo.png' }}
+          source={require('../../assets/logo.png')}
           className="w-20 h-20 mb-2"
         />
         <Text className="text-xl font-bold">COOKING BOOK</Text>
         <Text className="text-sm text-gray-500">Recuperar Contraseña</Text>
       </View>
 
-      {/* Email Input */}
-      <View className="w-full">
+      <View className="w-full mb-2">
         <TextInput
           placeholder="Correo"
-          className="bg-white p-4 rounded-lg shadow-sm border border-gray-300"
+          value={email}
+          onChangeText={setEmail}
+          className={`bg-white p-4 rounded-lg shadow-sm border ${
+            error ? 'border-red-500' : 'border-gray-300'
+          }`}
         />
+        {error && (
+          <Text className="text-red-500 text-sm mt-1">{error}</Text>
+        )}
       </View>
 
-      {/* Send Code Button */}
-      <TouchableOpacity className="bg-rose-500 p-4 rounded-lg mt-6 w-full items-center">
+      <TouchableOpacity
+        className="bg-colorboton p-4 rounded-lg mt-6 w-full items-center"
+        onPress={handleSendCode}
+      >
         <Text className="text-white font-bold">Enviar Código</Text>
       </TouchableOpacity>
 
-      {/* Links */}
       <View className="w-full items-center mt-8">
-        <View className="flex-row items-center">
-          <View className="flex-1 h-[1px] bg-gray-300" />
-          <Text className="mx-2 text-gray-500">Otra forma</Text>
-          <View className="flex-1 h-[1px] bg-gray-300" />
-        </View>
-
-        {/* Social Login */}
-        <View className="flex-row justify-center space-x-4 mt-4">
-          <TouchableOpacity className="p-2">
-            {/* <Feather name="google" size={24} color="gray" /> */}
-          </TouchableOpacity>
-          <TouchableOpacity className="p-2">
-            <Feather name="facebook" size={24} color="gray" />
-          </TouchableOpacity>
-          <TouchableOpacity className="p-2">
-            <Feather name="twitter" size={24} color="gray" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Register Link */}
-        <TouchableOpacity className="mt-4">
+        <TouchableOpacity className="mt-4" onPress={() => router.push('/register')}>
           <Text className="text-sm text-gray-500">
-            ¿No tienes cuenta? <Text className="text-rose-500">Regístrate</Text>
+            ¿No tienes cuenta? <Text className="text-colorboton">Regístrate</Text>
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* Footer */}
       <Text className="text-xs text-gray-400 mt-8">
         Términos y condiciones
       </Text>

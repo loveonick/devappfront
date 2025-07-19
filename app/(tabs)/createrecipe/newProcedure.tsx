@@ -153,7 +153,8 @@ export default function NewProcedureScreen() {
         author: data.recipe.author.name || 'Desconocido',
       };
 
-      await addRecipe(newRecipe);
+      //esto es para cuando se cree se guarde en el contexto
+      //await addRecipe(newRecipe);
 
       // Limpiar el campo de duplicado en el draft
       updateDraft({ ...draft, duplicateId: null });
