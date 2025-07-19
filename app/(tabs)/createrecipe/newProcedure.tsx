@@ -1,25 +1,24 @@
 import { View, Text, TextInput, Pressable, Image, TouchableOpacity, Platform } from 'react-native';
 import { useState, useEffect } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRecipeContext } from '../../context/RecipeContext';
-import { createRecipe } from "../../api/recipe_api";
-import { addIngredient } from "../../api/ingredient_api";
-import {useAuth} from "../../context/AuthContext";
-import {addProcedure} from "../../api/procedure_api";
+import { createRecipe, deleteRecipe } from '../../api/recipe_api';
+import { addIngredient } from '../../api/ingredient_api';
+import { useAuth } from '../../context/AuthContext';
+import { addProcedure } from '../../api/procedure_api';
 
 interface RecipeStep {
   description: string;
   imageUri?: string;
-  imageFile?: any; // File (web) o { uri, name, type } (mobile)
+  imageFile?: any;
 }
 
 export default function NewProcedureScreen() {
   const router = useRouter();
-  const { draft, addRecipe} = useRecipeContext();
+  const { draft, addRecipe, updateDraft } = useRecipeContext();
   const { user } = useAuth();
-  console.log(draft);
 
   const [steps, setSteps] = useState<RecipeStep[]>(draft.steps ?? [{ description: '' }]);
   const [currentStep, setCurrentStep] = useState(1);
@@ -43,6 +42,7 @@ export default function NewProcedureScreen() {
       const imageFile = Platform.OS === 'web'
         ? asset.file ?? asset
         : { uri, name: fileName, type };
+
       const newSteps = [...steps];
       newSteps[currentStep - 1] = {
         ...newSteps[currentStep - 1],
@@ -50,8 +50,9 @@ export default function NewProcedureScreen() {
         imageFile: imageFile,
       };
       setSteps(newSteps);
-    };
+    }
   };
+
   const handleNextStep = () => {
     if (!steps[currentStep - 1]?.description) {
       alert('Agrega una descripción para este paso');
@@ -67,29 +68,26 @@ export default function NewProcedureScreen() {
     }
 
     try {
+      // 1. Primero crear la nueva receta
       const formData = new FormData();
-
-      // Tomar ingredientes, tags, tipo, etc, desde el draft:
       const ingredientIds: string[] = [];
       const procedureIds: string[] = [];
-      console.log(steps);
 
       for (const step of steps) {
         const procedureFormData = new FormData();
         procedureFormData.append("content", step.description);
 
         if (step.imageFile) {
-            if (Platform.OS === 'web') {
-              // En web step.imageFile debe ser un File/Blob válido
-              procedureFormData.append('media', step.imageFile);
-            } else {
-              // En RN paso objeto {uri, name, type} y poner el tercer parámetro para el nombre
-              procedureFormData.append('media', step.imageFile, step.imageFile.name);
-            }
+          if (Platform.OS === 'web') {
+            procedureFormData.append('media', step.imageFile);
+          } else {
+            procedureFormData.append('media', step.imageFile, step.imageFile.name);
+          }
         }
+
         const savedProcedure = await addProcedure(procedureFormData);
         procedureIds.push(savedProcedure._id);
-      };
+      }
       formData.append('procedures', JSON.stringify(procedureIds));
 
       for (const ingredient of draft.ingredients ?? []) {
@@ -100,16 +98,14 @@ export default function NewProcedureScreen() {
 
       formData.append('name', draft.title ?? '');
       formData.append('description', draft.description ?? '');
-
       formData.append('tags', JSON.stringify(draft.tags ?? []));
       formData.append('author', user._id);
-
       formData.append('type', draft.type ?? '');
       formData.append('isApproved', user.role === 'admin' ? 'true' : 'false');
 
       if (Platform.OS === 'web') {
         if (draft.imageFile) {
-          formData.append('media', draft.imageFile); // file ya es un File válido
+          formData.append('media', draft.imageFile);
         }
       } else {
         if (draft.imageUri) {
@@ -121,44 +117,62 @@ export default function NewProcedureScreen() {
             uri: draft.imageUri,
             name: filename ?? 'photo.jpg',
             type,
-          } as any); // el 'as any' es necesario para RN FormData
-        };
-      };
+          } as any);
+        }
+      }
 
       const data = await createRecipe(formData);
-      console.log(data.recipe);
+
+      // 2. Solo después de crear la nueva receta, eliminar la anterior si existe
+      if (draft.duplicateId) {
+        try {
+          await deleteRecipe(draft.duplicateId);
+          console.log('Receta duplicada eliminada');
+        } catch (err) {
+          console.error('Error al eliminar receta previa:', err);
+          // No impedimos el flujo aunque falle la eliminación
+        }
+      }
+
       const newRecipe = {
-          id: data.recipe._id,
-          title: data.recipe.name as string,
-          description: data.recipe.description as string,
-          imageUri: data.recipe.image as string,
-          ingredients: data.recipe.ingredients.map((i: any) => ({
-            name: i.name,
-            quantity: i.amount.toString(), // pasar como string, no número
-            unit: i.unit,
-          })),
-          steps: data.recipe.procedures.map((p: any) => ({
-            description: p.content,
-            imageUri: p.media?? '', // opcional, puede no existir
-          })),
-          tags: data.recipe.tags || [],
-          date: data.recipe.date || new Date().toISOString(),
-          author: data.recipe.author.name || 'Desconocido', 
+        id: data.recipe._id,
+        title: data.recipe.name as string,
+        description: data.recipe.description as string,
+        imageUri: data.recipe.image as string,
+        ingredients: data.recipe.ingredients.map((i: any) => ({
+          name: i.name,
+          quantity: i.amount.toString(),
+          unit: i.unit,
+        })),
+        steps: data.recipe.procedures.map((p: any) => ({
+          description: p.content,
+          imageUri: p.media ?? '',
+        })),
+        tags: data.recipe.tags || [],
+        date: data.recipe.date || new Date().toISOString(),
+        author: data.recipe.author.name || 'Desconocido',
       };
-      console.log(newRecipe);
+
       await addRecipe(newRecipe);
 
+      // Limpiar el campo de duplicado en el draft
+      updateDraft({ ...draft, duplicateId: null });
+
+      // Navegar a la pantalla de released
       router.push({
         pathname: '/createrecipe/released',
-        params: { id: data.recipe._id }
+        params: {
+          id: data.recipe._id,
+          replaced: draft.duplicateId ? 'true' : 'false'
+        }
       });
 
     } catch (error) {
       console.error('Error en handleFinish:', error);
-      alert(error.message || 'Error al guardar la receta');
+      alert('Error al guardar la receta. Por favor intenta nuevamente.');
     }
   };
-
+  
   useEffect(() => {
     if (steps.length < currentStep) {
       setSteps(prev => [...prev, { description: '' }]);

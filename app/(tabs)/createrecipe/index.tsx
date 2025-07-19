@@ -23,11 +23,11 @@ export default function Index() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null); 
-  const { user } = useAuth();
-  
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [type, setType] = useState<string>('');
   const { updateDraft } = useRecipeContext();
+  const { user } = useAuth();
+
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [existingRecipe, setExistingRecipe] = useState<any>(null);
   const [isChecking, setIsChecking] = useState(false);
@@ -52,7 +52,7 @@ export default function Index() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
-    
+
     if (!result.canceled) {
       const asset = result.assets[0];
       setImageUri(asset.uri);
@@ -64,29 +64,30 @@ export default function Index() {
 
   const checkRecipeExists = async (): Promise<boolean> => {
     if (!title.trim()) return false;
-    
+
     setIsChecking(true);
     try {
-      // 1. Verificar si existe una receta con ese nombre en toda la base de datos
       const recipeByName = await getRecipeByName(title);
       if (!recipeByName) {
         setIsChecking(false);
         return false;
       }
 
-      // 2. Verificar si el usuario actual ya tiene una receta con ese nombre
       const userRecipes = await getRecipesByUserId(user._id);
-      const userHasRecipe = userRecipes.some(r => 
+      const userHasRecipe = userRecipes.some(r =>
         r.title.trim().toLowerCase() === title.trim().toLowerCase()
       );
 
       if (userHasRecipe) {
         setExistingRecipe(recipeByName);
+        updateDraft({
+          duplicateId: recipeByName._id,
+        });
         setShowDuplicateModal(true);
         setIsChecking(false);
         return true;
       }
-      
+
       setIsChecking(false);
       return false;
     } catch (error) {
@@ -102,18 +103,42 @@ export default function Index() {
       return;
     }
 
-    const hasDuplicate = await checkRecipeExists();
+    setIsChecking(true);
+    try {
+      const recipeByName = await getRecipeByName(title);
+      
+      if (recipeByName) {
+        const userRecipes = await getRecipesByUserId(user._id);
+        const userHasRecipe = userRecipes.some(r =>
+          r.title.trim().toLowerCase() === title.trim().toLowerCase()
+        );
 
-    if (!hasDuplicate) {
+        if (userHasRecipe) {
+          setExistingRecipe(recipeByName);
+          updateDraft({
+            duplicateId: recipeByName._id,
+          });
+          setShowDuplicateModal(true);
+          setIsChecking(false);
+          return; // Salimos aquí para mostrar el modal
+        }
+      }
+
+      // Si no hay duplicado, continuar
       updateDraft({
         title,
         description,
         imageUri,
         imageFile,
         type,
+        duplicateId: null,
       });
-      console.log('Existing recipe:', existingRecipe);
-      console.log('Navigating to:', `/editrecipe/${existingRecipe?._id}`);
+      router.push('/createrecipe/ingredients');
+    } catch (error) {
+      console.error('Error checking recipe existence:', error);
+      Alert.alert('Error', 'Ocurrió un error al verificar la receta');
+    } finally {
+      setIsChecking(false);
     }
   };
 
@@ -121,7 +146,27 @@ export default function Index() {
     setShowDuplicateModal(false);
     router.push(`/editrecipe/${existingRecipe._id}`);
   };
-  
+
+  const handleReplaceExisting = () => {
+    setShowDuplicateModal(false);
+    
+    // Asegurar que todos los campos requeridos están presentes
+    if (!title || !description || !type) {
+      Alert.alert('Error', 'Por favor completa todos los campos antes de reemplazar');
+      return;
+    }
+
+    updateDraft({
+      title,
+      description,
+      imageUri,
+      imageFile,
+      type,
+      duplicateId: existingRecipe._id,
+    });
+    
+    router.push('/createrecipe/ingredients');
+  };
 
   return (
     <View className="flex-1 bg-white px-6 pt-12">
@@ -133,7 +178,6 @@ export default function Index() {
         placeholder="Ej: Tacos al pastor"
         value={title}
         onChangeText={setTitle}
-        onBlur={() => checkRecipeExists()}
       />
 
       <Text className="font-semibold mb-1">Descripción</Text>
@@ -186,7 +230,7 @@ export default function Index() {
           {isChecking ? 'Verificando...' : 'Siguiente'}
         </Text>
       </TouchableOpacity>
-      
+
       <Modal
         visible={showDuplicateModal}
         transparent
@@ -205,13 +249,13 @@ export default function Index() {
             >
               <Text className="text-white text-center font-bold">Editar receta existente</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity
-              onPress={() => setShowDuplicateModal(false)}
-              className="border border-gray-400 rounded-md py-3"
-            >
-              <Text className="text-black text-center">Reemplazar receta existente</Text>
-            </TouchableOpacity>
+
+           <TouchableOpacity
+            onPress={handleReplaceExisting}
+            className="border border-gray-400 rounded-md py-3"
+          >
+            <Text className="text-black text-center">Reemplazar receta existente</Text>
+          </TouchableOpacity>
           </View>
         </View>
       </Modal>

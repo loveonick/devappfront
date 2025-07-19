@@ -1,18 +1,27 @@
 import { View, Text, Pressable } from 'react-native';
-import { router } from 'expo-router';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 
 export default function PublicadoScreen() {
+  const { replaced } = useLocalSearchParams();
   const { id } = useLocalSearchParams();
-  
+  const isReplacement = replaced === 'true';
+
   return (
     <View className="flex-1 bg-white justify-center items-center px-6">
-      <Text className="text-2xl font-bold text-center mb-4">¡Receta creada correctamente!</Text>
-      <Text className="text-base text-center mb-8">Ahora puedes verla en tu lista de recetas</Text>
+      <Text className="text-2xl font-bold text-center mb-4">
+        {isReplacement
+          ? '¡Receta reemplazada correctamente!'
+          : '¡Receta creada correctamente!'}
+      </Text>
+      <Text className="text-base text-center mb-8">
+        {isReplacement
+          ? 'La receta anterior fue eliminada y esta nueva ya está publicada.'
+          : 'Ahora puedes verla en tu lista de recetas.'}
+      </Text>
 
       <View className="flex-row space-x-4">
         <Pressable
-          onPress={() => router.push('/createrecipe')} 
+          onPress={() => router.push('/createrecipe')}
           className="bg-[#9D5C63] rounded-full px-6 py-2"
         >
           <Text className="text-white font-bold text-base">Crear otra receta</Text>
