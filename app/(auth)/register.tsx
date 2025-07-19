@@ -76,7 +76,6 @@ const RegisterScreen = () => {
       className="flex-1 bg-colorfondo"
       behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           keyboardShouldPersistTaps="handled"
@@ -176,7 +175,6 @@ const RegisterScreen = () => {
             </View>
           </View>
         </ScrollView>
-      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 };
