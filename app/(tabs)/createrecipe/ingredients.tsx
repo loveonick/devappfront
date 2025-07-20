@@ -36,14 +36,20 @@ export default function Ingredients() {
 
   const handleContinue = () => {
     const ingredientNames = ingredients.map(i => i.name).filter(name => name.trim() !== '');
-    const newTags = Array.from(new Set([...(draft.tags ?? []), ...ingredientNames]));
+
+    const baseTags = draft.type ? [draft.type] : [];
+
+    const allTags = Array.from(new Set([...baseTags, ...ingredientNames]));
+
     updateDraft({
       ...draft,
       ingredients,
-      tags: newTags,
+      tags: allTags,
     });
+
     router.push('/createrecipe/newProcedure');
   };
+
 
   return (
     <View className="flex-1 bg-white px-6 pt-12">

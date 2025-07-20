@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, ActivityIndicator, TextInput, Pressable, Alert } from 'react-native';
+import { View, Text, Image, ScrollView, ActivityIndicator, TextInput, Pressable, Alert, Modal, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -41,18 +41,20 @@ export default function RecipeDetail() {
   const [comment, setComment] = useState('');
   const [userComments, setUserComments] = useState<Comment[]>([]);
   const [portions, setPortions] = useState(2);
+  const [modalVisible, setModalVisible] = useState(false); // Modal para "ya comentaste"
+  console.log(userComments);
 
-const calculateIngredients = () => {
-  if (!recipe?.ingredients) return [];
+  const calculateIngredients = () => {
+    if (!recipe?.ingredients) return [];
 
-  return recipe.ingredients.map((ing) => {
-    const quantityNum = parseFloat(ing.quantity?.toString() || '0');
-    return {
-      ...ing,
-      quantity: ((quantityNum * portions) / 2).toFixed(2),
-    };
-  });
-};
+    return recipe.ingredients.map((ing) => {
+      const quantityNum = parseFloat(ing.quantity?.toString() || '0');
+      return {
+        ...ing,
+        quantity: ((quantityNum * portions) / 2).toFixed(2),
+      };
+    });
+  };
 
   const averageRating =
     userComments.length > 0
@@ -65,20 +67,19 @@ const calculateIngredients = () => {
       return;
     }
 
-  if (!user) {  
-    Alert.alert('Error', 'No hay un usuario autenticado.');
-    return;
-  }
-  
+    if (!user) {  
+      Alert.alert('Error', 'No hay un usuario autenticado.');
+      return;
+    }
 
- const userAlreadyCommented = user ? userComments.some(c => c.userId === user._id) : false;
-  if (userAlreadyCommented) {
-    Alert.alert('Ya comentaste', 'No puedes escribir más de una reseña');
-    return;
-  }
+    const userAlreadyCommented = userComments.some(c => c.userId === user._id);
+    if (userAlreadyCommented) {
+      setModalVisible(true); // mostrar modal en vez de alert
+      return;
+    }
 
     try {
-      await addQualification(id as string, {
+      const newQualification = await addQualification(id as string, {
         userId: user._id,
         star: ratingUser,
         comment: comment,
@@ -101,72 +102,74 @@ const calculateIngredients = () => {
     }
   };
 
-useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-    const loadRecipe = async () => {
-      try {
-        const recipeId = Array.isArray(id) ? id[0] : id;
-        if (!recipeId) throw new Error('ID de receta no proporcionado');
+      const loadRecipe = async () => {
+        try {
+          const recipeId = Array.isArray(id) ? id[0] : id;
+          if (!recipeId) throw new Error('ID de receta no proporcionado');
 
-        const connection = await NetInfo.fetch();
+          const connection = await NetInfo.fetch();
 
-        if (!connection.isConnected) {
-          const localRecipe = getRecipeLocal(recipeId);
+          if (!connection.isConnected) {
+            const localRecipe = getRecipeLocal(recipeId);
 
-          console.log('🔌 Modo offline — receta cruda desde AsyncStorage:', localRecipe);
+            console.log('🔌 Modo offline — receta cruda desde AsyncStorage:', localRecipe);
 
-          if (!localRecipe) throw new Error('Esta receta no está disponible sin conexión.');
+            if (!localRecipe) throw new Error('Esta receta no está disponible sin conexión.');
 
-          const sanitized = sanitizeRecipe(localRecipe);
-          console.log('✅ Receta saneada offline:', sanitized);
-          console.log('🍽 Ingredientes:', sanitized.ingredients);
-          console.log('📋 Pasos:', sanitized.steps);
+            const sanitized = sanitizeRecipe(localRecipe);
+            console.log('✅ Receta saneada offline:', sanitized);
+            console.log('🍽 Ingredientes:', sanitized.ingredients);
+            console.log('📋 Pasos:', sanitized.steps);
 
-          setRecipe(sanitized);
-          setUserComments([]);
-          setError(null);
-          return;
+            setRecipe(sanitized);
+            setUserComments([]);
+            setError(null);
+            return;
+          }
+
+          // Modo online
+          const recipeFetched = await getRecipeById(recipeId);
+          const qualificationsFetched = await getQualificationsByRecipeId(recipeId);
+
+          if (isActive) {
+            const sanitizedOnline = sanitizeRecipe(recipeFetched);
+
+            console.log('🌐 Receta cargada online:', sanitizedOnline);
+
+            setRecipe(sanitizedOnline);
+            setUserComments(
+              qualificationsFetched.map((q) => ({
+                userId: q.author?._id,
+                name: q.author?.name || 'Anónimo',
+                text: q.content,
+                stars: q.stars,
+              }))
+            );
+            setError(null);
+          }
+        } catch (err: any) {
+          console.error('❌ Error al cargar receta:', err);
+          if (isActive) {
+            setError(err.message || 'Error desconocido');
+            setRecipe(null);
+          }
+        } finally {
+          if (isActive) setLoading(false);
         }
+      };
 
-        // Modo online
-        const recipeFetched = await getRecipeById(recipeId);
-        const qualificationsFetched = await getQualificationsByRecipeId(recipeId);
+      loadRecipe();
 
-        if (isActive) {
-          const sanitizedOnline = sanitizeRecipe(recipeFetched);
+      return () => {
+        isActive = false;
+      };
+    }, [id])
+  );
 
-          console.log('🌐 Receta cargada online:', sanitizedOnline);
-
-          setRecipe(sanitizedOnline);
-          setUserComments(
-            qualificationsFetched.map((q) => ({
-              name: q.author?.name || 'Anónimo',
-              text: q.content,
-              stars: q.stars,
-            }))
-          );
-          setError(null);
-        }
-      } catch (err: any) {
-        console.error('❌ Error al cargar receta:', err);
-        if (isActive) {
-          setError(err.message || 'Error desconocido');
-          setRecipe(null);
-        }
-      } finally {
-        if (isActive) setLoading(false);
-      }
-    };
-
-    loadRecipe();
-
-    return () => {
-      isActive = false;
-    };
-  }, [id])
-);
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
@@ -194,19 +197,44 @@ useFocusEffect(
 
   const ingredientsToDisplay = calculateIngredients();
 
-  const SimpleStarRating = ({ rating, onChange }: { rating: number; onChange?: (rating: number) => void }) => {
-    return (
-      <View className="flex-row">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Pressable key={star} onPress={() => onChange?.(star)}>
-            <Icon name={star <= rating ? 'star' : 'star-outline'} size={25} color="#FFD700" />
-          </Pressable>
-        ))}
-      </View>
-    );
-  };
+  const SimpleStarRating = ({
+    rating,
+    onChange,
+  }: {
+    rating: number;
+    onChange?: (rating: number) => void;
+  }) => (
+    <View className="flex-row">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Pressable key={star} onPress={() => onChange?.(star)}>
+          <Icon name={star <= rating ? 'star' : 'star-outline'} size={25} color="#FFD700" />
+        </Pressable>
+      ))}
+    </View>
+  );
 
   return (
+    <>
+    <Modal
+      transparent
+      visible={modalVisible}
+      animationType="fade"
+      onRequestClose={() => setModalVisible(false)}
+    >
+      <View className="flex-1 justify-center items-center bg-black bg-opacity-40">
+        <View className="bg-white rounded-2xl p-6 w-4/5 shadow-lg items-center">
+          <Text className="text-lg font-semibold text-gray-800 mb-3">Ya comentaste</Text>
+          <Text className="text-gray-600 text-center mb-5">No puedes escribir más de una reseña para esta receta.</Text>
+          <TouchableOpacity
+            onPress={() => setModalVisible(false)}
+            className="bg-[#9D5C63] px-4 py-2 rounded-lg"
+          >
+            <Text className="text-white font-semibold">Cerrar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+      
     <ScrollView className="flex-1 bg-white">
       <View className="relative">
         {recipe.imageUri ? (
@@ -262,25 +290,58 @@ useFocusEffect(
 
         <View className="mb-8">
           <Text className="text-xl font-bold text-gray-800 mb-3">Preparación</Text>
-          {recipe.steps && recipe.steps.length > 0 ? (
-  recipe.steps.map((step, index) => (
-    <View key={index} className="mb-4">
-      <Text className="font-bold text-lg mb-1">Paso {index + 1}</Text>
-      <Text className="text-gray-700">{step.description || 'Sin descripción'}</Text>
-      {step.imageUri ? (
-        <Image
-          source={{ uri: step.imageUri }}
-          className="w-full h-48 rounded-lg mt-2"
-          resizeMode="cover"
-        />
-      ) : null}
-    </View>
-  ))
-) : (
-  <Text className="text-gray-500">No hay pasos disponibles</Text>
-)}
+          {recipe.steps?.map((step, index) => (
+            <View key={index} className="mb-5 bg-[#FEF5EF] p-4 rounded-lg">
+              <Text className="font-bold text-[#9D5C63] mb-2">Paso {index + 1}</Text>
+              <Text className="text-gray-700 mb-3">{step.description}</Text>
+              {step.imageUri && (
+                <Image source={{ uri: step.imageUri }} className="w-full h-48 rounded-lg" />
+              )}
+            </View>
+          ))}
+        </View>
+        {/* Comentarios */}
+        <View>
+          <Text className="text-xl font-bold text-gray-800 mb-3">Deja tu comentario</Text>
+
+          <TextInput
+            className="border-[#F0B27A] border-2 p-3 rounded-lg text-gray-700"
+            placeholder="Escribe tu comentario..."
+            placeholderTextColor="#9D5C63"
+            value={comment}
+            onChangeText={setComment}
+            multiline
+          />
+
+          <View className="bg-[#FEF5EF] p-4 rounded-lg my-4 items-center">
+            <Text className="font-semibold text-center text-gray-700 mb-2">Tu calificación</Text>
+            <SimpleStarRating rating={ratingUser} onChange={setRatingUser} />
+          </View>
+
+          <Pressable
+            onPress={handleCommentSubmit}
+            className="bg-[#9D5C63] rounded-lg px-6 py-3 items-center mt-2 mb-8"
+          >
+            <Text className="text-white font-bold text-lg">Publicar comentario</Text>
+          </Pressable>
+
+          {/* Lista de comentarios */}
+          <Text className="text-xl font-bold text-gray-800 mb-3">Comentarios</Text>
+
+          {userComments.length > 0 ? (
+            userComments.map((c, idx) => (
+              <View key={idx} className="bg-[#FEF5EF] p-4 rounded-lg mb-4">
+                <Text className="font-bold text-gray-800">{c.name}</Text>
+                <Text className="text-gray-700 my-2">{c.text}</Text>
+                <SimpleStarRating rating={c.stars} />
+              </View>
+            ))
+          ) : (
+            <Text className="text-gray-500 text-center py-4">No hay comentarios aún</Text>
+          )}
         </View>
       </View>
     </ScrollView>
+    </>
   );
 }
