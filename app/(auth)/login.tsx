@@ -8,8 +8,7 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-  TouchableWithoutFeedback,
-  Keyboard
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'expo-router';
@@ -20,6 +19,7 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -40,6 +40,7 @@ const LoginScreen = () => {
     }
 
     setErrors({});
+    setLoading(true);
 
     try {
       await login(email.trim(), password);
@@ -52,6 +53,8 @@ const LoginScreen = () => {
       } else {
         setErrors({ general: error.message || 'Error al iniciar sesión.' });
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,6 +87,7 @@ const LoginScreen = () => {
               <View className="mb-4">
                 <TextInput
                   placeholder="Correo"
+                  placeholderTextColor={'#9CA3AF'}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   value={email}
@@ -98,10 +102,11 @@ const LoginScreen = () => {
               <View className="mb-4">
                 <TextInput
                   placeholder="Contraseña"
+                  placeholderTextColor={'#9CA3AF'}
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
-                  className={`${inputClass} ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+                  className={`${inputClass} text-black ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
                 />
                 {errors.password && (
                   <Text className="text-red-500 text-sm mt-1">{errors.password}</Text>
@@ -116,9 +121,20 @@ const LoginScreen = () => {
             <TouchableOpacity
               onPress={handleLogin}
               className="bg-colorboton p-4 rounded-lg mt-6 w-full items-center"
+              disabled={loading}
             >
-              <Text className="text-white font-bold">Iniciar Sesión</Text>
+              <Text className="text-white font-bold">
+                {loading ? 'Cargando...' : 'Iniciar Sesión'}
+              </Text>
             </TouchableOpacity>
+
+            {loading && (
+              <View className="mt-4">
+                <ActivityIndicator size="large" color="#000" />
+              </View>
+            )}
+
+
 
             <View className="w-full items-center mt-4">
               <TouchableOpacity onPress={() => router.push('/recover')}>
