@@ -157,10 +157,12 @@ export const getRecipesByUserId = async (userId: string) => {
     };
 
     const response = await fetch(`${url}/recipes/user/${userId}`, requestOptions);
+    if (response.status === 404) {
+      return [];
+    }
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
-    
     const data = await response.json();
     const recipes = data.recipes.map((r) => ({
       id: r._id,

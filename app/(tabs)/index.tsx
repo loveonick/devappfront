@@ -216,7 +216,7 @@ const handleSaveRecipe = async (recipe: any) => {
                       params: { id: item.id },
                     })
                   }
-                  activeOpacity={0.9}
+                  activeOpacity={0.8}
                 >
                   <RecipeCard
                     recipeId={item.id}

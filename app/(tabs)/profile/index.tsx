@@ -70,22 +70,17 @@ const ProfileScreen = () => {
     deleteRecipe(recipeId);
   };
 
-
-
   useFocusEffect(
     useCallback(() => {
-      if (user && activeTab === 'sin-conexion') {
+      if (!user) return;
+
+      if (activeTab === 'sin-conexion') {
         reloadStoredRecipes();
-        console.log(storedRecipes);
+      } else if (activeTab === 'mis-recetas') {
+        fetchUserRecipes();
       }
     }, [user, activeTab])
   );
-
-  useEffect(() => {
-    if (user && activeTab === 'mis-recetas') {
-      fetchUserRecipes();
-    }
-  }, [user, activeTab]);
 
   const displayedRecipes =
     activeTab === 'mis-recetas'
@@ -94,6 +89,7 @@ const ProfileScreen = () => {
       ? savedRecipes
       : storedRecipes;
 
+  
   return (
     <SafeAreaView className="flex-1 bg-colorfondo">
       <ScrollView className="flex-1 bg-white px-4 py-6">
@@ -168,7 +164,7 @@ const ProfileScreen = () => {
                     params: { id: item.id },
                   })
                 }
-                activeOpacity={0.9}
+                activeOpacity={0.8}
               >
                 <RecipeCard
                   recipeId={item.id}
