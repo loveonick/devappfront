@@ -3,6 +3,7 @@ import { Tabs, Redirect } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useAuth } from '../context/AuthContext';
 import { View, ActivityIndicator } from 'react-native';
+import { usePendingRecipeUploader } from '../../utils/usePendingRecipe';
 
 const TabsLayout = () => {
   const { user, isLoading } = useAuth();
@@ -16,11 +17,13 @@ const TabsLayout = () => {
     );
   }
 
-
   if (!user) {
     return <Redirect href="/login" />;
   }
 
+  usePendingRecipeUploader();
+  // This hook checks for pending recipes and uploads them if connected to WiFi
+  
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: color }}>
       <Tabs.Screen
@@ -67,16 +70,16 @@ const TabsLayout = () => {
           headerShown: false,
         }}
       />
-<Tabs.Screen
-  name="recipes/savedrecipes"
-  options={{
-    title: 'Guardadas',
-    tabBarIcon: ({ color, size }) => (
-      <AntDesign name="download" size={size} color={color} />
-    ),
-    headerShown: false,
-  }}
-/>
+      <Tabs.Screen
+        name="recipes/savedrecipes"
+        options={{
+          title: 'Guardadas',
+          tabBarIcon: ({ color, size }) => (
+            <AntDesign name="download" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
       <Tabs.Screen
         name="notificationsUser"
         options={{

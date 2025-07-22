@@ -1,6 +1,6 @@
 import { FlatList, Image, Text, TouchableOpacity, View, ScrollView, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { useRecipeContext } from '../context/RecipeContext';
 import NetInfo from '@react-native-community/netinfo';
@@ -42,30 +42,42 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    const checkConnectionAndFetchData = async () => {
-      const state = await NetInfo.fetch();
-      setIsConnected(state.isConnected);
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-      if (!state.isConnected) {
-        await reloadStoredRecipes();
-        setLoading(false);
-        return;
-      }
+      const checkConnectionAndFetchData = async () => {
+        const state = await NetInfo.fetch();
+        if (!isActive) return;
 
-      try {
-        const data = await getApprovedRecipes();
-        setRecipes(data || []);
-      } catch (err) {
-        console.error('Error al cargar recetas:', err);
-        setRecipes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+        setIsConnected(state.isConnected);
 
-    checkConnectionAndFetchData();
-  }, []);
+        if (!state.isConnected) {
+          await reloadStoredRecipes();
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const data = await getApprovedRecipes();
+          if (isActive) {
+            setRecipes(data || []);
+          }
+        } catch (err) {
+          console.error('Error al cargar recetas:', err);
+          if (isActive) setRecipes([]);
+        } finally {
+          if (isActive) setLoading(false);
+        }
+      };
+
+      checkConnectionAndFetchData();
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   const filteredRecipes = recipes.filter(r =>
     selectedDishType === 'Todos' || (r.tags && r.tags.includes(selectedDishType))

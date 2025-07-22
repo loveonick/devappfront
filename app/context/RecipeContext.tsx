@@ -27,6 +27,12 @@ export interface Recipe {
   author: string;
 }
 
+export interface RecipeStep {
+  description: string;
+  imageUri?: string;
+  // Add other fields if needed
+}
+
 interface RecipeContextType {
   storedRecipes: Recipe[];
   addRecipe: (recipe: Recipe) => Promise<void>;
@@ -41,10 +47,16 @@ interface RecipeContextType {
   deleteAllRecipes: () => Promise<void>;
   clearDraft: () => void;
   updateRecipe: (id: string, updatedRecipe: Partial<Recipe>) => void;
+
+  addPendingRecipe: (draft: RecipeDraft, steps: RecipeStep[]) => Promise<void>;
+  getPendingRecipes: () => Promise<{ draft: RecipeDraft; steps: RecipeStep[] }[]>;
+  clearPendingRecipes: () => Promise<void>;
 }
 
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
 const STORAGE_KEY = 'RECIPES_STORAGE';
+const PENDING_KEY = 'PENDING_RECIPES_STORAGE';
+
 
 export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [storedRecipes, setRecipesState] = useState<Recipe[]>([]);
@@ -152,6 +164,42 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
   };
 
+  const addPendingRecipe = async (draft: RecipeDraft, steps: RecipeStep[]) => {
+    try {
+      const recipeToStore = {
+        draft,
+        steps,
+        date: new Date().toISOString()
+      };
+
+      const stored = await AsyncStorage.getItem(PENDING_KEY);
+      const pending = stored ? JSON.parse(stored) : [];
+
+      pending.push(recipeToStore);
+      await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(pending));
+    } catch (err) {
+      console.error('Error al guardar receta pendiente:', err);
+    }
+  };
+
+  const getPendingRecipes = async (): Promise<{ draft: RecipeDraft; steps: RecipeStep[] }[]> => {
+    try {
+      const stored = await AsyncStorage.getItem(PENDING_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (err) {
+      console.error('Error al obtener recetas pendientes:', err);
+      return [];
+    }
+  };
+
+  const clearPendingRecipes = async () => {
+    try {
+      await AsyncStorage.removeItem(PENDING_KEY);
+    } catch (err) {
+      console.error('Error al limpiar recetas pendientes:', err);
+    }
+  };
+
   return (
     <RecipeContext.Provider
       value={{
@@ -167,6 +215,9 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateDraft,
         clearDraft,
         updateRecipe,
+        addPendingRecipe,
+        getPendingRecipes,
+        clearPendingRecipes
       }}
     >
       {children}
