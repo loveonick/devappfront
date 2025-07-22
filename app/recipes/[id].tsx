@@ -6,7 +6,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { getRecipeById } from '../api/recipe_api';
 import { getQualificationsByRecipeId, addQualification } from '../api/qualification_api';
-import { saveNotification } from '../(tabs)/notificationsUser';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -21,6 +20,7 @@ interface Recipe {
 }
 
 interface Comment {
+  userId?: string;
   name: string;
   text: string;
   stars: number;
@@ -76,6 +76,12 @@ const handleCommentSubmit = async () => {
       return;
     }
 
+    const alreadyCommented = userComments.some(c => c.userId === user._id);
+    if (alreadyCommented) {
+      Alert.alert('Ya comentaste', 'Solo puedes comentar una vez esta receta.');
+      return;
+  }
+
     try {
       const newQualification = await addQualification(id as string, {
         userId: user._id,
@@ -114,6 +120,7 @@ const handleCommentSubmit = async () => {
             setRecipe(recipeFetched);
             setUserComments(
               qualificationsFetched.map((q) => ({
+                userId: q.author?._id,
                 name: q.author?.name || 'Anónimo',
                 text: q.content,
                 stars: q.stars,

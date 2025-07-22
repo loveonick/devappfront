@@ -25,7 +25,7 @@ export default function EditRecipe() {
   const [fileName, setFileName] = useState('photo.jpg'); // Nombre por defecto para la imagen
   const [type, setType] = useState('');
   const [ingredients, setIngredients] = useState<{ name: string; amount: string; unit: string }[]>([]);
-  const [steps, setSteps] = useState<{ description: string; imageUri?: string }[]>([]);
+  const [steps, setSteps] = useState<{ description: string; imageUri?: string; imageFile?: File }[]>([]); //esto
   const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -141,18 +141,33 @@ export default function EditRecipe() {
     );
 
     const stepsIds = await Promise.all(
-      steps.map(async (step) => {
-        try {
-          const newFormData = new FormData();
-          newFormData.append('content', step.description);
-          const created = await addProcedure(newFormData);
-          return created._id;
-        } catch (err) {
-          console.error('Error al crear paso:', step, err);
-          throw new Error("No se pudo crear el paso: " + step.description);
+    steps.map(async (step) => { //144 a 170
+      try {
+        const newFormData = new FormData();
+        newFormData.append('content', step.description);
+        
+        if (Platform.OS === 'web') {
+          if (step.imageFile) {
+            newFormData.append('media', step.imageFile);
+          }
+        } else if (step.imageUri) {
+          const fileName = step.imageUri.split('/').pop() || 'step.jpg';
+          newFormData.append('media', {
+            uri: step.imageUri,
+            name: fileName,
+            type: 'image/jpeg'
+          } as any);
         }
-      })
-    );
+
+        const created = await addProcedure(newFormData);
+        return created._id;
+      } catch (err) {
+        console.error('Error al crear paso:', step, err);
+        throw new Error("No se pudo crear el paso: " + step.description);
+      }
+    })
+  );
+
     //tags
     const autoTags = [
       type, // tipo de plato
@@ -185,6 +200,29 @@ export default function EditRecipe() {
   const handleCancel = () => {
     router.back();
   };
+
+  //189 hasta 210
+  const pickStepImage = async (stepIndex: number) => {
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== 'granted') return;
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    quality: 1,
+  });
+
+  if (!result.canceled) {
+    const asset = result.assets[0];
+    const uri = asset.uri;
+    const file = Platform.OS === 'web' ? asset.file ?? null : null;
+
+    const updatedSteps = [...steps];
+    updatedSteps[stepIndex].imageUri = uri;
+    if (file) updatedSteps[stepIndex].imageFile = file;
+
+    setSteps(updatedSteps);
+  }
+};
 
   return (
     <ScrollView className="flex-1 bg-white px-4 pt-6">
@@ -287,32 +325,45 @@ export default function EditRecipe() {
       </TouchableOpacity>
 
       <Text className="font-semibold mb-2">Pasos de preparación</Text>
-    {steps.map((step, idx) => (
-      <View key={idx} className="mb-4">
-        <View className="flex-row justify-between items-center mb-1">
-          <Text className="font-medium">Paso {idx + 1}</Text>
-          <TouchableOpacity
-            onPress={() => {
-              const filtered = steps.filter((_, i) => i !== idx);
-              setSteps(filtered);
-            }}
-            className="px-2 py-1 bg-red-200 rounded-md"
-          >
-            <Text className="text-red-800 font-bold">Eliminar</Text>
-          </TouchableOpacity>
-        </View>
-        <TextInput
-          placeholder="Descripción del paso"
-          value={step.description}
-          onChangeText={(text) => {
-            const newSteps = [...steps];
-            newSteps[idx].description = text;
-            setSteps(newSteps);
-          }}
-          multiline
-          className="border border-gray-300 rounded-md px-3 py-2 h-20"
-        />
-      </View>
+    {steps.map((step, idx) => ( //313 a 351
+  <View key={idx} className="mb-4">
+    <View className="flex-row justify-between items-center mb-1">
+      <Text className="font-medium">Paso {idx + 1}</Text>
+      <TouchableOpacity
+        onPress={() => {
+          const filtered = steps.filter((_, i) => i !== idx);
+          setSteps(filtered);
+        }}
+        className="px-2 py-1 bg-red-200 rounded-md"
+      >
+        <Text className="text-red-800 font-bold">Eliminar</Text>
+      </TouchableOpacity>
+    </View>
+
+    <TextInput
+      placeholder="Descripción del paso"
+      value={step.description}
+      onChangeText={(text) => {
+        const newSteps = [...steps];
+        newSteps[idx].description = text;
+        setSteps(newSteps);
+      }}
+      multiline
+      className="border border-gray-300 rounded-md px-3 py-2 h-20 mb-2"
+    />
+
+    {/* Imagen del paso */}
+    <TouchableOpacity
+      onPress={() => pickStepImage(idx)}
+      className="bg-gray-100 h-40 rounded-md justify-center items-center"
+    >
+      {step.imageUri ? (
+        <Image source={{ uri: step.imageUri }} className="w-full h-full rounded-md" />
+      ) : (
+        <Text className="text-gray-500">Agregar imagen para este paso</Text>
+      )}
+    </TouchableOpacity>
+  </View>
     ))}
       <TouchableOpacity
         onPress={() => setSteps([...steps, { description: '' }])}
