@@ -1,13 +1,13 @@
-import { View, Text, TextInput, Pressable, Image, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, Image, TouchableOpacity, Platform, Alert } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRecipeContext } from '../../context/RecipeContext';
-import { createRecipe, deleteRecipe } from '../../api/recipe_api';
-import { addIngredient } from '../../api/ingredient_api';
 import { useAuth } from '../../context/AuthContext';
-import { addProcedure } from '../../api/procedure_api';
+import { handleUpload } from '../../../utils/handleUpload';
+import * as Network from 'expo-network';
+
 
 interface RecipeStep {
   description: string;
@@ -17,11 +17,13 @@ interface RecipeStep {
 
 export default function NewProcedureScreen() {
   const router = useRouter();
-  const { draft, addRecipe, updateDraft } = useRecipeContext();
+  const { draft, addRecipe, updateDraft, addPendingRecipe } = useRecipeContext();
   const { user } = useAuth();
 
   const [steps, setSteps] = useState<RecipeStep[]>(draft.steps ?? [{ description: '' }]);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showConfirmUpload, setShowConfirmUpload] = useState(false);
+
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -68,98 +70,34 @@ export default function NewProcedureScreen() {
     }
 
     try {
-      // 1. Primero crear la nueva receta
-      const formData = new FormData();
-      const ingredientIds: string[] = [];
-      const procedureIds: string[] = [];
+      const networkState = await Network.getNetworkStateAsync();
 
-      for (const step of steps) {
-        const procedureFormData = new FormData();
-        procedureFormData.append("content", step.description);
-
-        if (step.imageFile) {
-          if (Platform.OS === 'web') {
-            procedureFormData.append('media', step.imageFile);
-          } else {
-            procedureFormData.append('media', step.imageFile, step.imageFile.name);
-          }
-        }
-
-        const savedProcedure = await addProcedure(procedureFormData);
-        procedureIds.push(savedProcedure._id);
-      }
-      formData.append('procedures', JSON.stringify(procedureIds));
-
-      for (const ingredient of draft.ingredients ?? []) {
-        const savedIngredient = await addIngredient(ingredient);
-        ingredientIds.push(savedIngredient._id);
-      }
-      formData.append('ingredients', JSON.stringify(ingredientIds));
-
-      formData.append('name', draft.title ?? '');
-      formData.append('description', draft.description ?? '');
-      formData.append('tags', JSON.stringify(draft.tags ?? []));
-      formData.append('author', user._id);
-      formData.append('type', draft.type ?? '');
-      formData.append('isApproved','false');
-
-      if (Platform.OS === 'web') {
-        if (draft.imageFile) {
-          formData.append('media', draft.imageFile);
-        }
-      } else {
-        if (draft.imageUri) {
-          const filename = draft.imageUri.split('/').pop();
-          const match = /\.(\w+)$/.exec(filename ?? '');
-          const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-          formData.append('media', {
-            uri: draft.imageUri,
-            name: filename ?? 'photo.jpg',
-            type,
-          } as any);
-        }
+      if (!networkState.isConnected) {
+        alert('No hay conexión. La receta se guardará y se subirá automáticamente cuando tengas WiFi.');
+        await addPendingRecipe(draft, steps);
+        router.push('/');
+        return;
       }
 
-      const data = await createRecipe(formData);
-
-      // 2. Solo después de crear la nueva receta, eliminar la anterior si existe
-      if (draft.duplicateId) {
-        try {
-          await deleteRecipe(draft.duplicateId);
-          console.log('Receta duplicada eliminada');
-        } catch (err) {
-          console.error('Error al eliminar receta previa:', err);
-          // No impedimos el flujo aunque falle la eliminación
-        }
+      if (networkState.type !== Network.NetworkStateType.WIFI) {
+        setShowConfirmUpload(true);
+        return;
       }
 
-      const newRecipe = {
-        id: data.recipe._id,
-        title: data.recipe.name as string,
-        description: data.recipe.description as string,
-        imageUri: data.recipe.image as string,
-        ingredients: data.recipe.ingredients.map((i: any) => ({
-          name: i.name,
-          quantity: i.amount.toString(),
-          unit: i.unit,
-        })),
-        steps: data.recipe.procedures.map((p: any) => ({
-          description: p.content,
-          imageUri: p.media ?? '',
-        })),
-        tags: data.recipe.tags || [],
-        date: data.recipe.date || new Date().toISOString(),
-        author: data.recipe.author.name || 'Desconocido',
-      };
+      await proceedToUpload();
 
-      //esto es para cuando se cree se guarde en el contexto
-      //await addRecipe(newRecipe);
+    } catch (error) {
+      console.error('Error al verificar red:', error);
+      alert('Error al verificar el estado de red.');
+    }
+  };
 
-      // Limpiar el campo de duplicado en el draft
+  const proceedToUpload = async () => {
+    try {
+      const data = await handleUpload(draft, steps, user);
+
       updateDraft({ ...draft, duplicateId: null });
 
-      // Navegar a la pantalla de released
       router.push({
         pathname: '/createrecipe/released',
         params: {
@@ -168,13 +106,12 @@ export default function NewProcedureScreen() {
           pending: 'true'
         }
       });
-
     } catch (error) {
-      console.error('Error en handleFinish:', error);
+      console.error('Error subiendo la receta:', error);
       alert('Error al guardar la receta. Por favor intenta nuevamente.');
     }
   };
-  
+
   useEffect(() => {
     if (steps.length < currentStep) {
       setSteps(prev => [...prev, { description: '' }]);
@@ -182,6 +119,7 @@ export default function NewProcedureScreen() {
   }, [currentStep]);
 
   return (
+    
     <View className="flex-1 bg-white px-6 pt-12">
       <TouchableOpacity 
         onPress={() => router.back()}
@@ -239,6 +177,42 @@ export default function NewProcedureScreen() {
           <Text className="text-white font-bold">Finalizar</Text>
         </Pressable>
       </View>
+      {showConfirmUpload && (
+        <View className="absolute inset-0 bg-black/50 justify-center items-center z-20 px-8">
+          <View className="bg-white rounded-xl p-6 w-full">
+            <Text className="text-lg font-semibold mb-4 text-center text-gray-800">
+              Estás usando una red móvil
+            </Text>
+            <Text className="text-center text-gray-600 mb-6">
+              ¿Querés subir la receta usando esta conexión o esperar hasta tener WiFi?
+            </Text>
+
+            <View className="flex-row justify-around">
+              <TouchableOpacity
+                onPress={async () => {
+                  await addPendingRecipe(draft, steps);
+                  setShowConfirmUpload(false);
+                  router.push('/');
+                }}
+                className="bg-gray-300 rounded-full px-4 py-2"
+              >
+                <Text className="text-gray-800 font-medium">Esperar WiFi</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={async () => {
+                  setShowConfirmUpload(false);
+                  await proceedToUpload();
+                  router.push('/createrecipe/released');
+                }}
+                className="bg-[#9D5C63] rounded-full px-4 py-2"
+              >
+                <Text className="text-white font-medium">Subir ahora</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }

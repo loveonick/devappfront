@@ -3,6 +3,7 @@ const url = 'https://dda1-backend.onrender.com/api';
 
 export const addIngredient = async (ingredient: { name: string; quantity: string; unit: string }) => {
     try {
+        console.log('Adding ingredient:', ingredient);
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 

@@ -1,5 +1,5 @@
-//const url = 'http://localhost:8080/api';
-const url = 'https://dda1-backend.onrender.com/api';
+//const url = 'http://localhost:8080/api'; 
+const url = 'https://dda1-backend.onrender.com/api'; 
 
 export const getQualificationsByRecipeId = async (recipeId) => {
     try {
@@ -54,3 +54,81 @@ export const addQualification = async (recipeId, qualification: { userId: string
         throw error;
     }
 }
+
+export const getPendingQualifications = async () => {
+  try {
+    const response = await fetch(`${url}/qualifications/pending`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const data = await response.json();
+    const qualifications = data.qualifications.map((q) => ({
+      id: q._id,
+      content: q.content,
+      stars: q.stars,
+      author: q.author?.name ?? "Desconocido",
+      recipeId: q.recipeId,
+      date: q.createdAt,
+    }));
+    return qualifications;
+  } catch (error) {
+    console.error("Error fetching pending qualifications:", error);
+    throw error;
+  }
+};
+
+export const getApprovedQualifications = async () => {
+  try {
+    const response = await fetch(`${url}/qualifications/approved`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const data = await response.json();
+    const qualifications = data.qualifications.map((q) => ({
+      id: q._id,
+      content: q.content,
+      stars: q.stars,
+      author: q.author?.name ?? "Desconocido",
+      recipeId: q.recipeId,
+      date: q.createdAt,
+    }));
+    return qualifications;
+  } catch (error) {
+    console.error("Error fetching approved qualifications:", error);
+    throw error;
+  }
+};
+
+export const approveQualification = async (qualificationId) => {
+  try {
+    const response = await fetch(`${url}/qualifications/${qualificationId}/approve`, {
+      method: "PUT",
+    });
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error approving qualification:", error);
+    throw error;
+  }
+};
+
+
+

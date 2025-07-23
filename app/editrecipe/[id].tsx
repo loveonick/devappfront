@@ -24,7 +24,7 @@ export default function EditRecipe() {
   const [fileName, setFileName] = useState('photo.jpg');
   const [type, setType] = useState('');
   const [ingredients, setIngredients] = useState<{ name: string; amount: string; unit: string }[]>([]);
-  const [steps, setSteps] = useState<{ description: string; imageUri?: string }[]>([]);
+  const [steps, setSteps] = useState<{ description: string; imageUri?: string; imageFile?: File }[]>([]); //esto
   const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -88,23 +88,6 @@ export default function EditRecipe() {
     }
   };
 
-  const pickStepImage = async (index: number) => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') return;
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      const asset = result.assets[0];
-      const uri = asset.uri;
-      const newSteps = [...steps];
-      newSteps[index].imageUri = uri;
-      setSteps(newSteps);
-    }
-  };
 
   const handleUpdate = async () => {
     try {
@@ -229,6 +212,28 @@ export default function EditRecipe() {
   const handleCancel = () => {
     router.back();
   };
+
+  const pickStepImage = async (stepIndex: number) => {
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== 'granted') return;
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    quality: 1,
+  });
+
+  if (!result.canceled) {
+    const asset = result.assets[0];
+    const uri = asset.uri;
+    const file = Platform.OS === 'web' ? asset.file ?? null : null;
+
+    const updatedSteps = [...steps];
+    updatedSteps[stepIndex].imageUri = uri;
+    if (file) updatedSteps[stepIndex].imageFile = file;
+
+    setSteps(updatedSteps);
+  }
+};
 
   return (
     <ScrollView className="flex-1 bg-white px-4 pt-6">

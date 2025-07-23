@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { verifyRecoveryCodeApi } from '../api/auth_api';
 
@@ -7,10 +7,13 @@ const EnterCodeScreen = () => {
   const { email } = useLocalSearchParams();
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+
 
   const handleValidateCode = async () => {
     try {
-      setError(null); // Reiniciar error previo
+      setError(null);
+      setLoading(true);
 
       if (!code.trim()) {
         throw new Error('El código es obligatorio.');
@@ -21,8 +24,11 @@ const EnterCodeScreen = () => {
     } catch (error: any) {
       console.error('Error al validar el código:', error.message);
       setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
+
 
   return (
     <View className="flex-1 bg-colorfondo items-center justify-center px-6">
@@ -40,6 +46,7 @@ const EnterCodeScreen = () => {
       <View className="w-full mb-2">
         <TextInput
           placeholder="Código de Recuperación"
+          placeholderTextColor={'#9CA3AF'}
           className={`bg-white p-4 rounded-lg shadow-sm border ${
             error ? 'border-red-500' : 'border-gray-300'
           }`}
@@ -51,11 +58,21 @@ const EnterCodeScreen = () => {
 
 
       <TouchableOpacity
-        className="bg-colorboton p-4 rounded-lg mt-6 w-full items-center"
+        className={`bg-colorboton p-4 rounded-lg mt-6 w-full items-center ${loading ? 'opacity-60' : ''}`}
         onPress={handleValidateCode}
+        disabled={loading}
       >
-        <Text className="text-white font-bold">Validar</Text>
+        <Text className="text-white font-bold">
+          {loading ? 'Validando...' : 'Validar'}
+        </Text>
       </TouchableOpacity>
+      
+      {loading && (
+      <View className="mt-4">
+        <ActivityIndicator size="large" color="#9D5C63" />
+      </View>
+    )}
+
     </View>
   );
 };

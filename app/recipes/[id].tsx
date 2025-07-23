@@ -1,13 +1,14 @@
 import { View, Text, Image, ScrollView, ActivityIndicator, TextInput, Pressable, Alert, Modal, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
+import NetInfo from '@react-native-community/netinfo';
 
 import { getRecipeById } from '../api/recipe_api';
 import { getQualificationsByRecipeId, addQualification } from '../api/qualification_api';
-
 import { useAuth } from '../context/AuthContext';
+import { useRecipeContext } from '../context/RecipeContext';
+import { sanitizeRecipe } from '../../utils/sanitizeRecipe';
 
 interface Recipe {
   id: string;
@@ -17,6 +18,8 @@ interface Recipe {
   ingredients: { name: string; quantity: string; unit: string }[];
   steps: { description: string; imageUri?: string }[];
   tags: string[];
+  author?: string;
+  date?: string;
 }
 
 interface Comment {
@@ -28,7 +31,8 @@ interface Comment {
 
 export default function RecipeDetail() {
   const { id } = useLocalSearchParams();
-  const { user } = useAuth(); 
+  const { user } = useAuth();
+  const { getRecipeById: getRecipeLocal } = useRecipeContext();
 
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,26 +42,18 @@ export default function RecipeDetail() {
   const [userComments, setUserComments] = useState<Comment[]>([]);
   const [portions, setPortions] = useState(2);
   const [modalVisible, setModalVisible] = useState(false); // Modal para "ya comentaste"
-
-  const loadFromStorage = async (recipeId: string) => {
-    try {
-      const stored = await AsyncStorage.getItem('RECIPES_STORAGE');
-      if (stored) {
-        const recipes = JSON.parse(stored);
-        return recipes.find((r: Recipe) => r.id === recipeId);
-      }
-    } catch (error) {
-      console.error('Error loading from storage:', error);
-    }
-    return null;
-  };
+  console.log(userComments);
 
   const calculateIngredients = () => {
     if (!recipe?.ingredients) return [];
-    return recipe.ingredients.map((ing) => ({
-      ...ing,
-      quantity: (parseFloat(ing.quantity) * portions) / 2,
-    }));
+
+    return recipe.ingredients.map((ing) => {
+      const quantityNum = parseFloat(ing.quantity?.toString() || '0');
+      return {
+        ...ing,
+        quantity: ((quantityNum * portions) / 2).toFixed(2),
+      };
+    });
   };
 
   const averageRating =
@@ -76,8 +72,8 @@ export default function RecipeDetail() {
       return;
     }
 
-    const userAlreadyCommented = userComments.some(c => c.userId === user._id);
-    if (userAlreadyCommented) {
+    const alreadyCommented = userComments.some(c => c.userId === user._id);
+    if (alreadyCommented) {
       setModalVisible(true); // mostrar modal en vez de alert
       return;
     }
@@ -89,14 +85,7 @@ export default function RecipeDetail() {
         comment: comment,
       });
 
-      setUserComments([
-        {
-          name: user.username,
-          text: comment,
-          stars: ratingUser,
-        },
-        ...userComments,
-      ]);
+      /* se saca el agregarlo directamente de manera local */
 
       setComment('');
       setRatingUser(0);
@@ -112,34 +101,64 @@ export default function RecipeDetail() {
 
       const loadRecipe = async () => {
         try {
-          if (!id) throw new Error('ID de receta no proporcionado');
-          const recipeFetched = await getRecipeById(id);
-          const qualificationsFetched = await getQualificationsByRecipeId(id);
+          const recipeId = Array.isArray(id) ? id[0] : id;
+          if (!recipeId) throw new Error('ID de receta no proporcionado');
 
+          const connection = await NetInfo.fetch();
+
+          if (!connection.isConnected) {
+            const localRecipe = getRecipeLocal(recipeId);
+
+            console.log('🔌 Modo offline — receta cruda desde AsyncStorage:', localRecipe);
+
+            if (!localRecipe) throw new Error('Esta receta no está disponible sin conexión.');
+
+            const sanitized = sanitizeRecipe(localRecipe);
+            console.log('✅ Receta saneada offline:', sanitized);
+            console.log('🍽 Ingredientes:', sanitized.ingredients);
+            console.log('📋 Pasos:', sanitized.steps);
+
+            setRecipe(sanitized);
+            setUserComments([]);
+            setError(null);
+            return;
+          }
+
+          // Modo online
+          const recipeFetched = await getRecipeById(recipeId);
+          const qualificationsFetched = await getQualificationsByRecipeId(id);
+          console.log(qualificationsFetched);
           if (isActive) {
-            setRecipe(recipeFetched);
-            setUserComments(
-              qualificationsFetched.map((q) => ({
-                userId: q.author?._id,
-                name: q.author?.name || 'Anónimo',
-                text: q.content,
-                stars: q.stars,
-              }))
+            const sanitizedOnline = sanitizeRecipe(recipeFetched);
+
+            console.log('🌐 Receta cargada online:', sanitizedOnline);
+
+             setRecipe(recipeFetched);
+              setUserComments( // modif esto
+              qualificationsFetched
+                .map((q) => ({
+                  userId: q.author?._id,
+                  name: q.author?.name || 'Anónimo',
+                  text: q.content,
+                  stars: q.stars,
+                }))
             );
+
             setError(null);
           }
-        } catch (err) {
+        } catch (err: any) {
+          console.error('❌ Error al cargar receta:', err);
           if (isActive) {
-            setError((err as Error).message);
+            setError(err.message || 'Error desconocido');
             setRecipe(null);
           }
         } finally {
-          if (isActive) {
-            setLoading(false);
-          }
+          if (isActive) setLoading(false);
         }
       };
+
       loadRecipe();
+
       return () => {
         isActive = false;
       };
@@ -189,59 +208,27 @@ export default function RecipeDetail() {
     </View>
   );
 
-  const handleSaveRecipe = async () => {
-    try {
-      const stored = await AsyncStorage.getItem('RECIPES_STORAGE');
-      const storedRecipes: Recipe[] = stored ? JSON.parse(stored) : [];
-
-      const alreadySaved = storedRecipes.some((r) => r.id === recipe?.id);
-      if (alreadySaved) {
-        Alert.alert('Ya guardada', 'Esta receta ya fue guardada para ver sin conexión.');
-        return;
-      }
-
-      if (storedRecipes.length >= 10) {
-        Alert.alert('Límite alcanzado', 'Solo puedes guardar hasta 10 recetas.');
-        return;
-      }
-
-      const recipeToSave = {
-        ...recipe,
-        date: new Date().toISOString(),
-        author: user?.username || 'Anónimo'
-      };
-
-      const updatedRecipes = [...storedRecipes, recipeToSave];
-      await AsyncStorage.setItem('RECIPES_STORAGE', JSON.stringify(updatedRecipes));
-      Alert.alert('Receta guardada', 'La receta se guardó correctamente.');
-
-    } catch (error) {
-      console.error('Error al guardar receta:', error);
-      Alert.alert('Error', 'No se pudo guardar la receta.');
-    }
-  };
-
   return (
     <>
-      <Modal
-        transparent
-        visible={modalVisible}
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View className="flex-1 justify-center items-center bg-black bg-opacity-40">
-          <View className="bg-white rounded-2xl p-6 w-4/5 shadow-lg items-center">
-            <Text className="text-lg font-semibold text-gray-800 mb-3">Ya comentaste</Text>
-            <Text className="text-gray-600 text-center mb-5">No puedes escribir más de una reseña para esta receta.</Text>
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              className="bg-[#9D5C63] px-4 py-2 rounded-lg"
-            >
-              <Text className="text-white font-semibold">Cerrar</Text>
-            </TouchableOpacity>
-          </View>
+    <Modal
+      transparent
+      visible={modalVisible}
+      animationType="fade"
+      onRequestClose={() => setModalVisible(false)}
+    >
+      <View className="flex-1 justify-center items-center bg-black bg-opacity-40">
+        <View className="bg-white rounded-2xl p-6 w-4/5 shadow-lg items-center">
+          <Text className="text-lg font-semibold text-gray-800 mb-3">Ya comentaste</Text>
+          <Text className="text-gray-600 text-center mb-5">No puedes escribir más de una reseña para esta receta.</Text>
+          <TouchableOpacity
+            onPress={() => setModalVisible(false)}
+            className="bg-[#9D5C63] px-4 py-2 rounded-lg"
+          >
+            <Text className="text-white font-semibold">Cerrar</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </View>
+    </Modal>
       
     <ScrollView className="flex-1 bg-white">
       {/* Imagen principal */}
@@ -256,12 +243,10 @@ export default function RecipeDetail() {
         )}
       </View>
 
-      {/* Contenido */}
       <View className="p-5">
         <Text className="text-3xl font-bold text-gray-800 mb-2">{recipe.title}</Text>
         <Text className="text-gray-600 mb-5">{recipe.description}</Text>
 
-        {/* Calificación promedio */}
         <View className="bg-[#FEF5EF] p-4 rounded-xl mb-6">
           <Text className="font-bold text-lg text-center text-gray-700 mb-2">Calificación general</Text>
           <View className="items-center">
@@ -272,27 +257,19 @@ export default function RecipeDetail() {
           </View>
         </View>
 
-        {/* Porciones */}
         <View className="mb-6">
           <Text className="text-lg font-bold text-gray-800 mb-2">Porciones</Text>
           <View className="flex-row items-center bg-[#FEF5EF] p-3 rounded-lg">
-            <Pressable
-              onPress={() => setPortions((prev) => Math.max(1, prev - 1))}
-              className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center"
-            >
+            <Pressable onPress={() => setPortions((prev) => Math.max(1, prev - 1))} className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center">
               <Icon name="remove" size={20} color="white" />
             </Pressable>
             <Text className="mx-4 text-lg font-semibold">{portions}</Text>
-            <Pressable
-              onPress={() => setPortions((prev) => Math.min(10, prev + 1))}
-              className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center"
-            >
+            <Pressable onPress={() => setPortions((prev) => Math.min(10, prev + 1))} className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center">
               <Icon name="add" size={20} color="white" />
             </Pressable>
           </View>
         </View>
 
-        {/* Ingredientes */}
         <View className="mb-8">
           <Text className="text-xl font-bold text-gray-800 mb-3">Ingredientes</Text>
           <View className="bg-[#FEF5EF] p-4 rounded-lg">
@@ -300,14 +277,13 @@ export default function RecipeDetail() {
               <View key={index} className="flex-row py-2 border-b border-[#F0B27A] last:border-b-0">
                 <Text className="text-gray-700 flex-1">• {ing.name}</Text>
                 <Text className="text-gray-700 font-medium">
-                  {ing.quantity.toFixed(2)} {ing.unit}
+                  {ing.quantity} {ing.unit}
                 </Text>
               </View>
             ))}
           </View>
         </View>
 
-        {/* Pasos */}
         <View className="mb-8">
           <Text className="text-xl font-bold text-gray-800 mb-3">Preparación</Text>
           {recipe.steps?.map((step, index) => (

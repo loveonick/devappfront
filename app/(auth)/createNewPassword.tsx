@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { resetPasswordApi } from '../api/auth_api';
 
@@ -8,10 +8,13 @@ const CreateNewPasswordScreen = () => {
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const { email } = useLocalSearchParams();
+  const [loading, setLoading] = React.useState(false);
+
 
   const handleCreatePassword = async () => {
     try {
-      setError(null); // limpiar errores anteriores
+      setError(null);
+      setLoading(true);
 
       if (!newPassword.trim() || !confirmPassword.trim()) {
         throw new Error('Ambos campos son obligatorios.');
@@ -26,8 +29,11 @@ const CreateNewPasswordScreen = () => {
     } catch (error: any) {
       console.error('Error al crear la nueva contraseña:', error.message);
       setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
+
 
   return (
     <View className="flex-1 bg-colorfondo items-center justify-center px-6">
@@ -44,19 +50,21 @@ const CreateNewPasswordScreen = () => {
       <View className="w-full space-y-4 mb-2">
         <TextInput
           placeholder="Nueva Contraseña"
+          placeholderTextColor={'#9CA3AF'}
           secureTextEntry
           value={newPassword}
           onChangeText={setNewPassword}
-          className={`bg-white p-4 rounded-lg shadow-sm border ${
+          className={`bg-white p-4 rounded-lg shadow-sm border text-black ${
             error ? 'border-red-500' : 'border-gray-300'
           }`}
         />
         <TextInput
           placeholder="Repita la Contraseña"
+          placeholderTextColor={'#9CA3AF'}
           secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
-          className={`bg-white p-4 rounded-lg shadow-sm border ${
+          className={`bg-white p-4 rounded-lg shadow-sm border text-black ${
             error ? 'border-red-500' : 'border-gray-300'
           }`}
         />
@@ -67,11 +75,21 @@ const CreateNewPasswordScreen = () => {
 
 
       <TouchableOpacity
-        className="bg-colorboton p-4 rounded-lg mt-6 w-full items-center"
+        className={`bg-colorboton p-4 rounded-lg mt-6 w-full items-center ${loading ? 'opacity-60' : ''}`}
         onPress={handleCreatePassword}
+        disabled={loading}
       >
-        <Text className="text-white font-bold">Aceptar</Text>
+        <Text className="text-white font-bold">
+          {loading ? 'Guardando...' : 'Aceptar'}
+        </Text>
       </TouchableOpacity>
+      {loading && (
+        <View className="mt-4">
+          <ActivityIndicator size="large" color="#9D5C63" />
+        </View>
+      )}
+
+
     </View>
   );
 };
