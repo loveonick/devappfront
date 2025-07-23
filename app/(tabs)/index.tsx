@@ -2,15 +2,14 @@ import { FlatList, Image, Text, TouchableOpacity, View, ScrollView, SafeAreaView
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import RecipeCard from '../../components/RecipeCard';
 import RecipeWeek from '../../components/RecipeWeek';
 import Tags from '../../components/Tags';
 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../context/AuthContext';
-import { getRecipes,getApprovedRecipes } from '../api/recipe_api';
-import { useRecipeContext } from '../context/RecipeContext';
+import { getApprovedRecipes } from '../api/recipe_api';
 import Icon from 'react-native-vector-icons/Ionicons';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -33,7 +32,6 @@ const Index = () => {
   const [selectedDishType, setSelectedDishType] = useState('Todos');
   const { user } = useAuth();
 
-  //const { recipes, setRecipes } = useRecipeContext(); este es para el async storage
   const [recipes, setRecipes] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -283,16 +281,19 @@ const Index = () => {
 
                 <TouchableOpacity
                   onPress={() => {
-                    if (!isSaved) handleSaveRecipe(item);
+                    if (!isSaved) {
+                      handleSaveRecipe(item);
+                      Alert.alert('Receta guardada', 'Ahora puedes ver esta receta sin conexión');
+                    }
                   }}
                   disabled={isSaved}
-                  className={`mt-2 rounded-lg px-4 py-2 self-start ${
-                    isSaved ? 'bg-gray-400' : 'bg-[#6B0A1D]'
-                  }`}
+                  className="mt-2 p-2 self-start"
                 >
-                  <Text className="text-white font-semibold">
-                    {isSaved ? 'Ya guardada' : 'Guardar offline'}
-                  </Text>
+                  <MaterialIcons
+                    name={isSaved ? 'download-done' : 'download-for-offline'}
+                    size={28}
+                    color={isSaved ? '#888' : '#6B0A1D'}
+                  />
                 </TouchableOpacity>
               </View>
             );

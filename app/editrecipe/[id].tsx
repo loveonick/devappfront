@@ -4,9 +4,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { getRecipeById, updateRecipe } from '../api/recipe_api';
-import { addIngredient, updateIngredient } from '../api/ingredient_api';
+import { addIngredient } from '../api/ingredient_api';
 import { addProcedure } from '../api/procedure_api';
-
 
 const DISH_TYPES = [
   "Entrada", "Plato principal", "Guarnición", "Postre",
@@ -22,7 +21,7 @@ export default function EditRecipe() {
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null); 
-  const [fileName, setFileName] = useState('photo.jpg'); // Nombre por defecto para la imagen
+  const [fileName, setFileName] = useState('photo.jpg');
   const [type, setType] = useState('');
   const [ingredients, setIngredients] = useState<{ name: string; amount: string; unit: string }[]>([]);
   const [steps, setSteps] = useState<{ description: string; imageUri?: string }[]>([]);
@@ -42,10 +41,16 @@ export default function EditRecipe() {
           return;
         }
 
-        setTitle(recipe.title );
-        setDescription(recipe.description );
-        setImageUri(recipe.imageUri );
-        setIngredients(recipe.ingredients || []);
+        setTitle(recipe.title);
+        setDescription(recipe.description);
+        setImageUri(recipe.imageUri);
+        setIngredients(
+          (recipe.ingredients || []).map((ing: any) => ({
+            name: ing.name,
+            amount: ing.quantity || '', 
+            unit: ing.unit || ''
+          }))
+        );
         setSteps(recipe.steps || []);
         setTags(recipe.tags || []);
         setType(recipe.tags[0] || '');
@@ -83,95 +88,135 @@ export default function EditRecipe() {
     }
   };
 
+  const pickStepImage = async (index: number) => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      const newSteps = [...steps];
+      newSteps[index].imageUri = uri;
+      setSteps(newSteps);
+    }
+  };
+
   const handleUpdate = async () => {
     try {
-
       setIsLoading(true);
       setErrorMessage('');
       setUpdating(true);
 
-    if (!title.trim()) {
-      setErrorMessage('El nombre de la receta es obligatorio');
-      return;
-    }
+      if (!title.trim()) {
+        setErrorMessage('El nombre de la receta es obligatorio');
+        return;
+      }
 
-    if (!type.trim()) {
-      setErrorMessage('Debe seleccionar el tipo de plato');
-      return;
-    }
+      if (!type.trim()) {
+        setErrorMessage('Debe seleccionar el tipo de plato');
+        return;
+      }
 
-    if (ingredients.length === 0 || ingredients.some(ing => !ing.name.trim())) {
-      setErrorMessage('Debe agregar al menos un ingrediente con nombre');
-      return;
-    }
+      if (ingredients.length === 0 || ingredients.some(ing => !ing.name.trim())) {
+        setErrorMessage('Debe agregar al menos un ingrediente con nombre');
+        return;
+      }
 
-    if (steps.length === 0 || steps.some(step => !step.description.trim())) {
-      setErrorMessage('Debe agregar al menos un paso con descripción');
-      return;
-    }
-    // creamos un formData para enviar al backend
-    const formData = new FormData();
+      if (steps.length === 0 || steps.some(step => !step.description.trim())) {
+        setErrorMessage('Debe agregar al menos un paso con descripción');
+        return;
+      }
 
-    //img
-    if (Platform.OS === 'web') {
+      const formData = new FormData();
+
+      if (Platform.OS === 'web') {
         if (imageFile) {
-          formData.append('media', imageFile); // file ya es un File válido
+          formData.append('media', imageFile);
         }
-    } else {
+      } else {
         if (imageUri) {
-          formData.append('media', imageFile, fileName );
-        };
-      };
-
-    // 1. Crear cada ingrediente y obtener su _id
-    const ingredientIds = await Promise.all(
-      ingredients.map(async (ing) => {
-        try {
-          const created = await addIngredient({
-            name: ing.name,
-            quantity: ing.amount,
-            unit: ing.unit,
-          });
-          return created._id;
-        } catch (err) {
-          console.error('Error al crear ingrediente:', ing, err);
-          throw new Error("No se pudo crear el ingrediente: " + ing.name);
+          formData.append('media', {
+            uri: imageUri,
+            name: fileName,
+            type: 'image/jpeg',
+          } as any);
         }
-      })
-    );
+      }
 
-    const stepsIds = await Promise.all(
-      steps.map(async (step) => {
-        try {
-          const newFormData = new FormData();
-          newFormData.append('content', step.description);
-          const created = await addProcedure(newFormData);
-          return created._id;
-        } catch (err) {
-          console.error('Error al crear paso:', step, err);
-          throw new Error("No se pudo crear el paso: " + step.description);
-        }
-      })
-    );
-    //tags
-    const autoTags = [
-      type, // tipo de plato
-      ...ingredients.map((ing) => ing.name), // nombres de ingredientes
-    ];
-    formData.append('tags', JSON.stringify(autoTags));
-    formData.append('name', title);
-    formData.append('description', description);
-    formData.append('type', type || '');
-    formData.append('ingredients', JSON.stringify(ingredientIds));
-    formData.append('procedures', JSON.stringify(stepsIds));
+      const ingredientIds = await Promise.all(
+        ingredients.map(async (ing) => {
+          try {
+            const created = await addIngredient({
+              name: ing.name,
+              quantity: ing.amount,
+              unit: ing.unit,
+            });
+            return created._id;
+          } catch (err) {
+            console.error('Error al crear ingrediente:', ing, err);
+            throw new Error("No se pudo crear el ingrediente: " + ing.name);
+          }
+        })
+      );
 
+      const stepsIds = await Promise.all(
+        steps.map(async (step, idx) => {
+          try {
+            const stepForm = new FormData();
+            stepForm.append('content', step.description);
 
+            if (step.imageUri && Platform.OS === 'web') {
+              const response = await fetch(step.imageUri);
+              const blob = await response.blob();
+              const file = new File([blob], `step-${idx}.jpg`, { type: 'image/jpeg' });
+              stepForm.append('media', file);
+            }
 
-    // 3. Enviar al backend
-    await updateRecipe(id as string, formData);
+            if (step.imageUri && Platform.OS !== 'web') {
+              stepForm.append('media', {
+                uri: step.imageUri,
+                name: `step-${idx}.jpg`,
+                type: 'image/jpeg',
+              } as any);
+            }
 
-    Alert.alert('Éxito', 'Receta actualizada correctamente');
-    router.back();
+            const created = await addProcedure(stepForm);
+            return created._id;
+          } catch (err) {
+            console.error('Error al crear paso:', step, err);
+            throw new Error("No se pudo crear el paso: " + step.description);
+          }
+        })
+      );
+
+      const autoTags = [
+        type,
+        ...ingredients.map((ing) => ing.name),
+      ];
+      formData.append('tags', JSON.stringify(autoTags));
+      formData.append('name', title);
+      formData.append('description', description);
+      formData.append('type', type || '');
+      formData.append('ingredients', JSON.stringify(ingredientIds));
+      formData.append('procedures', JSON.stringify(stepsIds));
+      formData.append('isApproved', 'false'); 
+
+      await updateRecipe(id as string, formData);
+
+      Alert.alert('Éxito', 'Receta actualizada correctamente');
+      router.push({
+        pathname: '/createrecipe/released',
+        params: {
+          replaced: 'false',
+          pending: 'true',
+        },
+      });
+
     } catch (err: any) {
       console.error('Error al actualizar:', err);
       Alert.alert('Error', err.message || 'No se pudo actualizar la receta');
@@ -180,7 +225,6 @@ export default function EditRecipe() {
       setUpdating(false);
     }
   };
-  
 
   const handleCancel = () => {
     router.back();
@@ -278,42 +322,51 @@ export default function EditRecipe() {
         </View>
       ))}
       <TouchableOpacity
-        onPress={() =>
-          setIngredients([...ingredients, { name: '', amount: '', unit: '' }])
-        }
+        onPress={() => setIngredients([...ingredients, { name: '', amount: '', unit: '' }])}
         className="mb-4"
       >
         <Text className="text-[#9D5C63]">+ Agregar ingrediente</Text>
       </TouchableOpacity>
 
       <Text className="font-semibold mb-2">Pasos de preparación</Text>
-    {steps.map((step, idx) => (
-      <View key={idx} className="mb-4">
-        <View className="flex-row justify-between items-center mb-1">
-          <Text className="font-medium">Paso {idx + 1}</Text>
-          <TouchableOpacity
-            onPress={() => {
-              const filtered = steps.filter((_, i) => i !== idx);
-              setSteps(filtered);
+      {steps.map((step, idx) => (
+        <View key={idx} className="mb-4">
+          <View className="flex-row justify-between items-center mb-1">
+            <Text className="font-medium">Paso {idx + 1}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                const filtered = steps.filter((_, i) => i !== idx);
+                setSteps(filtered);
+              }}
+              className="px-2 py-1 bg-red-200 rounded-md"
+            >
+              <Text className="text-red-800 font-bold">Eliminar</Text>
+            </TouchableOpacity>
+          </View>
+          <TextInput
+            placeholder="Descripción del paso"
+            value={step.description}
+            onChangeText={(text) => {
+              const newSteps = [...steps];
+              newSteps[idx].description = text;
+              setSteps(newSteps);
             }}
-            className="px-2 py-1 bg-red-200 rounded-md"
+            multiline
+            className="border border-gray-300 rounded-md px-3 py-2 h-20 mb-2"
+          />
+
+          <TouchableOpacity
+            onPress={() => pickStepImage(idx)}
+            className="bg-gray-100 border border-gray-300 rounded-md h-40 justify-center items-center mb-2"
           >
-            <Text className="text-red-800 font-bold">Eliminar</Text>
+            {step.imageUri ? (
+              <Image source={{ uri: step.imageUri }} className="w-full h-full rounded-md" />
+            ) : (
+              <Text className="text-gray-500">Agregar imagen al paso</Text>
+            )}
           </TouchableOpacity>
         </View>
-        <TextInput
-          placeholder="Descripción del paso"
-          value={step.description}
-          onChangeText={(text) => {
-            const newSteps = [...steps];
-            newSteps[idx].description = text;
-            setSteps(newSteps);
-          }}
-          multiline
-          className="border border-gray-300 rounded-md px-3 py-2 h-20"
-        />
-      </View>
-    ))}
+      ))}
       <TouchableOpacity
         onPress={() => setSteps([...steps, { description: '' }])}
         className="mb-6"

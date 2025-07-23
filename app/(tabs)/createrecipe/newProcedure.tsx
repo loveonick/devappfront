@@ -101,7 +101,7 @@ export default function NewProcedureScreen() {
       formData.append('tags', JSON.stringify(draft.tags ?? []));
       formData.append('author', user._id);
       formData.append('type', draft.type ?? '');
-      formData.append('isApproved', user.role === 'admin' ? 'true' : 'false');
+      formData.append('isApproved','false');
 
       if (Platform.OS === 'web') {
         if (draft.imageFile) {
@@ -164,7 +164,8 @@ export default function NewProcedureScreen() {
         pathname: '/createrecipe/released',
         params: {
           id: data.recipe._id,
-          replaced: draft.duplicateId ? 'true' : 'false'
+          replaced: draft.duplicateId ? 'true' : 'false',
+          pending: 'true'
         }
       });
 
