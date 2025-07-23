@@ -16,6 +16,7 @@ const SearchBar = ({ placeholder, value, onChangeText }: Props) => {
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
+          placeholderTextColor={'#9CA3AF'}
           className="flex-1 ml-2 text-gray-700"
           returnKeyType="search"
         />

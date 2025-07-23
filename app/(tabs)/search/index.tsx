@@ -207,6 +207,7 @@ const Buscar = () => {
                   params: { id: item.id },
                 })
               }
+              activeOpacity={0.8}
               className="mb-4"
             >
               <RecipeCard

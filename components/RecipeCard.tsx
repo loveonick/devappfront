@@ -24,7 +24,9 @@ const RecipeCard = ({ recipeId, imgsrc, title, description, tags, author, date }
 
   return (
     <View className="flex-row mb-4 bg-white rounded-xl shadow p-2">
-      <Image source={imgsrc} className="w-24 h-24 rounded-xl mr-2" />
+      <View className="justify-center mr-2">
+        <Image source={imgsrc} className="w-24 h-24 rounded-xl" />
+      </View>
       <View className="flex-1">
         <View className="flex-row justify-between">
           <Text className="font-bold text-base">{title}</Text>

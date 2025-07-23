@@ -33,6 +33,7 @@ const AdminScreen = () => {
     try {
       setLoading(true);
       const data = await getPendingQualifications();
+      console.log(data);
       setQualifications(data);
     } catch (error) {
       console.error('Error al obtener comentarios pendientes:', error);
