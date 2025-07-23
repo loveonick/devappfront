@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, Saf
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getPendingRecipes, approveRecipe, deleteRecipe } from '../api/recipe_api';
+import { getPendingQualifications, approveQualification } from '../api/qualification_api';
 
 const AdminScreen = () => {
   const router = useRouter();
@@ -12,23 +13,38 @@ const AdminScreen = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const [qualifications, setQualifications] = useState([]);
 
   useEffect(() => {
-    const fetchPendingRecipes = async () => {
-      try {
-        setLoading(true);
-        const data = await getPendingRecipes();
-        setRecipes(data);
-      } catch (error) {
-        console.error('Error al obtener recetas pendientes:', error);
-        showMessage('No se pudieron cargar las recetas', 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchPendingRecipes = async () => {
+    try {
+      setLoading(true);
+      const data = await getPendingRecipes();
+      setRecipes(data);
+    } catch (error) {
+      console.error('Error al obtener recetas pendientes:', error);
+      showMessage('No se pudieron cargar las recetas', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchPendingRecipes();
-  }, []);
+  const fetchPendingQualifications = async () => {
+    try {
+      setLoading(true);
+      const data = await getPendingQualifications();
+      setQualifications(data);
+    } catch (error) {
+      console.error('Error al obtener comentarios pendientes:', error);
+      showMessage('No se pudieron cargar los comentarios', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPendingRecipes();
+  fetchPendingQualifications();
+}, []);
 
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage(text);
@@ -54,7 +70,7 @@ const AdminScreen = () => {
     router.push(`/recipes/${id}`);
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApproveRecipe = async (id: string) => {
     try {
       setApprovingId(id);
       await approveRecipe(id);
@@ -63,6 +79,20 @@ const AdminScreen = () => {
     } catch (err) {
       console.error('Error al aprobar receta:', err);
       showMessage('Error al aprobar la receta', 'error');
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const handleApproveQualification = async (id: string) => {
+    try {
+      setApprovingId(id);
+      await approveQualification(id);
+      setQualifications((prev) => prev.filter((q) => q.id !== id));
+      showMessage('Comentario aprobado correctamente', 'success');
+    } catch (err) {
+      console.error('Error al aprobar comentario:', err);
+      showMessage('Error al aprobar el comentario', 'error');
     } finally {
       setApprovingId(null);
     }
@@ -127,7 +157,7 @@ const AdminScreen = () => {
                 {approvingId === item.id ? (
                   <ActivityIndicator size="small" color="green" />
                 ) : (
-                  <TouchableOpacity onPress={() => handleApprove(item.id)}>
+                  <TouchableOpacity onPress={() => handleApproveRecipe(item.id)}>
                     <Ionicons name="checkmark-circle" size={24} color="green" />
                   </TouchableOpacity>
                 )}
@@ -150,7 +180,36 @@ const AdminScreen = () => {
             </View>
           ))
         )}
-      </ScrollView>
+
+        <Text className="text-2xl font-bold text-center my-6">Comentarios pendientes</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#9D5C63" className="mt-10" />
+          ) : qualifications.length === 0 ? (
+          <Text className="text-center text-gray-500 mt-2">No hay comentarios pendientes</Text>
+          ) : (
+            qualifications.map((item) => (
+          <View
+           key={item.id}
+           className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 mb-4"
+            >
+            <Text className="text-base font-medium mb-1">{item.content}</Text>
+            <Text className="text-sm text-gray-600 mb-1">Autor: {item.author?.name || 'Desconocido'}</Text>
+            <Text className="text-sm text-gray-600 mb-2">Estrellas: {item.stars} ⭐</Text>
+
+          {approvingId === item.id ? (
+            <ActivityIndicator size="small" color="green" />
+            ) : (
+            <TouchableOpacity
+              onPress={() => handleApproveQualification(item.id)}
+              className="bg-green-500 rounded-full px-3 py-1 self-start"
+            >
+            <Text className="text-white text-sm font-semibold">Aprobar</Text>
+          </TouchableOpacity>
+        )}    
+        </View>
+      ))
+    )}
+    </ScrollView>
     </SafeAreaView>
   );
 };

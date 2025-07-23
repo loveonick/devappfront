@@ -89,14 +89,7 @@ const handleCommentSubmit = async () => {
         comment: comment,
       });
 
-      setUserComments([
-        {
-          name: user.username,
-          text: comment,
-          stars: ratingUser,
-        },
-        ...userComments,
-      ]);
+      /* se saca el agregarlo directamente de manera local */
 
       setComment('');
       setRatingUser(0);
@@ -115,17 +108,21 @@ const handleCommentSubmit = async () => {
           if (!id) throw new Error('ID de receta no proporcionado');
           const recipeFetched = await getRecipeById(id);
           const qualificationsFetched = await getQualificationsByRecipeId(id);
+          const approvedQualifications = qualificationsFetched.filter(q => q.approved)/* filtrar por aprobadas */
 
           if (isActive) {
             setRecipe(recipeFetched);
-            setUserComments(
-              qualificationsFetched.map((q) => ({
-                userId: q.author?._id,
-                name: q.author?.name || 'Anónimo',
-                text: q.content,
-                stars: q.stars,
-              }))
+            setUserComments( // modif esto
+              approvedQualifications
+                .filter(q => q.approved) // solo los aprobados
+                .map((q) => ({
+                  userId: q.author?._id,
+                  name: q.author?.name || 'Anónimo',
+                  text: q.content,
+                  stars: q.stars,
+                }))
             );
+
             setError(null);
           }
         } catch (err) {
@@ -340,7 +337,6 @@ const handleCommentSubmit = async () => {
             <Text className="text-gray-500 text-center py-4">No hay comentarios aún</Text>
           )}
         </View>
-        
 
       </View>
     </ScrollView>
