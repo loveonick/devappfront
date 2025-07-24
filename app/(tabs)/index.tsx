@@ -99,12 +99,13 @@ const handleSaveRecipe = async (recipe: any) => {
     return;
   }
 
+
   const preparedRecipe = sanitizeRecipe({
     ...recipe,
     author: recipe.author ?? user.username,
     date: recipe.date ?? new Date().toISOString(),
   });
-
+  console.log('Guardando receta:', preparedRecipe);
   await addRecipe(preparedRecipe);
   Alert.alert('Receta guardada', 'La receta se guardó correctamente.');
 };
@@ -121,50 +122,64 @@ const handleSaveRecipe = async (recipe: any) => {
   if (!isConnected) {
     return (
       <SafeAreaView className="flex-1 bg-colorfondo">
-        <View className="px-4 pt-10 items-center">
-          <Icon name="cloud-offline-outline" size={80} color="#6B0A1D" />
-          <Text className="text-xl font-bold text-center mt-4">Sin conexión a Internet</Text>
-          <Text className="text-gray-600 text-center mt-2 mb-4">
-            Mostrando recetas guardadas localmente
-          </Text>
-        </View>
-
-        <FlatList
-          data={storedRecipes}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
-          renderItem={({ item }) => (
-            <View className="mb-4">
-              <RecipeCard
-                recipeId={item.id}
-                imgsrc={{ uri: item.imageUri }}
-                title={item.title}
-                description={item.description}
-                tags={item.tags}
-                author={item.author}
-                date={item.date?.toString() || ''}
-              />
+        <ScrollView className="flex-1">
+          <View className="px-4 pt-10 items-center">
+            <View className="flex-1 w-full">
               <TouchableOpacity
-                onPress={() => deleteRecipe(item.id)}
-                className="bg-red-500 mt-2 rounded-lg px-4 py-2 self-start"
+                onPress={() => router.push('/search')}
+                activeOpacity={0.7}
+                className="w-full"
               >
-                <Text className="text-white font-semibold">Eliminar receta</Text>
+                <View className="bg-white rounded-full px-4 py-2 flex-row items-center">
+                  <Icon name="search-outline" size={20} color="#888" />
+                  <Text className="ml-2 text-gray-500">Buscar recetas...</Text>
+                </View>
               </TouchableOpacity>
             </View>
-          )}
-          ListFooterComponent={
-            storedRecipes.length > 0 ? (
-              <TouchableOpacity
-                onPress={deleteAllRecipes}
-                className="bg-red-700 mx-6 mt-6 rounded-lg px-4 py-3"
-              >
-                <Text className="text-white font-bold text-center">
-                  Eliminar todas las recetas guardadas
-                </Text>
-              </TouchableOpacity>
-            ) : null
-          }
-        />
+            <Icon name="cloud-offline-outline" size={80} color="#6B0A1D" />
+            <Text className="text-xl font-bold text-center mt-4">Sin conexión a Internet</Text>
+            <Text className="text-gray-600 text-center mt-2 mb-4">
+              Mostrando recetas guardadas localmente
+            </Text>
+          </View>
+
+          <FlatList
+            data={storedRecipes}
+            keyExtractor={item => item.id.toString()}
+            contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
+            renderItem={({ item }) => (
+              <View className="mb-4">
+                <RecipeCard
+                  recipeId={item.id}
+                  imgsrc={{ uri: item.imageUri }}
+                  title={item.title}
+                  description={item.description}
+                  tags={item.tags}
+                  author={item.author}
+                  date={item.date?.toString() || ''}
+                />
+                <TouchableOpacity
+                  onPress={() => deleteRecipe(item.id)}
+                  className="bg-red-500 mt-2 rounded-lg px-4 py-2 self-start"
+                >
+                  <Text className="text-white font-semibold">Eliminar receta</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            ListFooterComponent={
+              storedRecipes.length > 0 ? (
+                <TouchableOpacity
+                  onPress={deleteAllRecipes}
+                  className="bg-red-700 mx-6 mt-6 rounded-lg px-4 py-3"
+                >
+                  <Text className="text-white font-bold text-center">
+                    Eliminar todas las recetas guardadas
+                  </Text>
+                </TouchableOpacity>
+              ) : null
+            }
+          />
+        </ScrollView>
       </SafeAreaView>
     );
   }

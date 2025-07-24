@@ -20,6 +20,8 @@ import { useRecipeContext } from '../../context/RecipeContext';
 import { mapRecipe } from '../../../utils/mapRecipe';
 import { getRecipesByUserId } from '../../api/recipe_api';
 
+import NetInfo from "@react-native-community/netinfo";
+
 const ProfileScreen = () => {
   const router = useRouter();
   const { user, setUser, logout } = useAuth();
@@ -44,6 +46,11 @@ const ProfileScreen = () => {
     setIsLoading(true);
     setErrorMessage('');
     try {
+      const netState = await NetInfo.fetch();
+      if (!netState.isConnected) {
+        console.warn('Sin conexión, se omite fetch de recetas.');
+      return;
+      }
       const data = await getRecipesByUserId(user._id);
       setUserRecipes(data);
       console.log(userRecipes);

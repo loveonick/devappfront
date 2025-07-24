@@ -21,6 +21,8 @@ import { getApprovedRecipes } from '../../api/recipe_api';
 import { useRouter } from 'expo-router';
 import { useRecipeContext } from '../../context/RecipeContext';
 
+import NetInfo from "@react-native-community/netinfo";
+
 const dishTypes = [
   "Entrada",
   "Plato principal",
@@ -50,12 +52,27 @@ const Buscar = () => {
   //const { recipes } = useRecipeContext();
   const [recipes, setRecipes] = useState([]);
   const router = useRouter();
-
+  const {
+    storedRecipes,
+    addRecipe,
+    deleteRecipe,
+    deleteAllRecipes,
+    alreadySaved,
+    reloadStoredRecipes,
+  } = useRecipeContext();
+  
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        const data = await getApprovedRecipes(); // Reemplaza con tu API real
+      const netState = await NetInfo.fetch();
+      if (netState.isConnected) {
+        const data = await getApprovedRecipes();
         setRecipes(data || []);
+      } else {
+        console.warn('Sin conexión: usando recetas almacenadas');
+        setRecipes(storedRecipes);
+      }
+
       } catch (error) {
         console.error('Error fetching recipes:', error);
       } finally {
