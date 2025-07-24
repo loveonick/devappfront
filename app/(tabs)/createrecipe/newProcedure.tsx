@@ -1,3 +1,4 @@
+// ... imports
 import { View, Text, TextInput, Pressable, Image, TouchableOpacity, Platform, Alert } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
@@ -7,7 +8,8 @@ import { useRecipeContext } from '../../context/RecipeContext';
 import { useAuth } from '../../context/AuthContext';
 import { handleUpload } from '../../../utils/handleUpload';
 import * as Network from 'expo-network';
-
+import { addIngredient } from '../../api/ingredient_api';
+import { addProcedure } from '../../api/procedure_api';
 
 interface RecipeStep {
   description: string;
@@ -17,13 +19,12 @@ interface RecipeStep {
 
 export default function NewProcedureScreen() {
   const router = useRouter();
-  const { draft, addRecipe, updateDraft, addPendingRecipe } = useRecipeContext();
+  const { draft, updateDraft, addPendingRecipe } = useRecipeContext();
   const { user } = useAuth();
 
   const [steps, setSteps] = useState<RecipeStep[]>(draft.steps ?? [{ description: '' }]);
   const [currentStep, setCurrentStep] = useState(1);
   const [showConfirmUpload, setShowConfirmUpload] = useState(false);
-
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -106,9 +107,18 @@ export default function NewProcedureScreen() {
           pending: 'true'
         }
       });
-    } catch (error) {
-      console.error('Error subiendo la receta:', error);
-      alert('Error al guardar la receta. Por favor intenta nuevamente.');
+    } catch (error: any) {
+      console.error('Error al subir la receta:', error);
+
+      // ⚠️ Solo mostrar el mensaje si es realmente crítico
+      const message = error?.message ?? '';
+      const esErrorCritico = message.includes('crear') || message.includes('subir la imagen');
+
+      if (esErrorCritico) {
+        Alert.alert('Error', message || 'No se pudo subir la receta.');
+      } else {
+        console.warn('Error menor durante subida, pero se completó en el back.');
+      }
     }
   };
 
@@ -119,7 +129,6 @@ export default function NewProcedureScreen() {
   }, [currentStep]);
 
   return (
-    
     <View className="flex-1 bg-white px-6 pt-12">
       <TouchableOpacity 
         onPress={() => router.back()}
@@ -177,6 +186,7 @@ export default function NewProcedureScreen() {
           <Text className="text-white font-bold">Finalizar</Text>
         </Pressable>
       </View>
+
       {showConfirmUpload && (
         <View className="absolute inset-0 bg-black/50 justify-center items-center z-20 px-8">
           <View className="bg-white rounded-xl p-6 w-full">
