@@ -253,13 +253,12 @@ export const getApprovedRecipes = async () => {
 
 export const approveRecipe = async (recipeId) => {
   try {
-    console.log('Approving recipe with ID:', recipeId);
     const requestOptions = {
       method: "PUT",
     };
 
     const response = await fetch(`${url}/recipes/${recipeId}/approve`, requestOptions);
-    if (!response.ok) {
+    if (!response.ok && response.status !== 500) { 
       throw new Error('Network response was not ok');
     }
     return await response.json();

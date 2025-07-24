@@ -37,7 +37,7 @@ export const handleUpload = async (draft: any, steps: any[], user: any) => {
     formData.append('tags', JSON.stringify(draft.tags ?? []));
     formData.append('author', user._id);
     formData.append('type', draft.type ?? '');
-    formData.append('isApproved', user.role === 'admin' ? 'true' : 'false');
+    formData.append('isApproved','false');
 
     // Imagen principal
     if (Platform.OS === 'web' && draft.imageFile) {

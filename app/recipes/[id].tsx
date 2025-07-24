@@ -231,11 +231,12 @@ export default function RecipeDetail() {
     </Modal>
       
     <ScrollView className="flex-1 bg-white">
-      <View className="relative">
+      {/* Imagen principal */}
+     <View className="w-full h-72 justify-center items-center bg-white">
         {recipe.imageUri ? (
-          <Image source={{ uri: recipe.imageUri }} className="w-full h-72" resizeMode="cover" />
+          <Image source={{ uri: recipe.imageUri }} style={{ width: '90%', height: '90%', resizeMode: 'contain' }}/>
         ) : (
-          <View className="w-full h-72 bg-gray-100 justify-center items-center">
+          <View className="w-full h-full bg-gray-100 justify-center items-center">
             <Icon name="image-outline" size={50} color="#9D5C63" />
             <Text className="text-gray-500 mt-2">No hay imagen disponible</Text>
           </View>
@@ -290,9 +291,10 @@ export default function RecipeDetail() {
               <Text className="font-bold text-[#9D5C63] mb-2">Paso {index + 1}</Text>
               <Text className="text-gray-700 mb-3">{step.description}</Text>
               {step.imageUri && (
-                <Image source={{ uri: step.imageUri }} className="w-full h-48 rounded-lg" />
+                  <Image source={{ uri: step.imageUri }} style={{ width: '30%', aspectRatio: 4 / 3 }} resizeMode="contain"/>
               )}
             </View>
+
           ))}
         </View>
         {/* Comentarios */}

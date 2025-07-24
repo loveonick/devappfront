@@ -243,7 +243,10 @@ const handleSaveRecipe = async (recipe: any) => {
 
                 <TouchableOpacity
                   onPress={() => {
-                    if (!isSaved) handleSaveRecipe(item);
+                    if (!isSaved) {
+                      handleSaveRecipe(item);
+                      Alert.alert('Receta guardada', 'Ahora puedes ver esta receta sin conexión');
+                    }
                   }}
                   disabled={isSaved}
                   className={`mt-2 rounded-lg px-4 py-2 self-start ${isSaved ? 'bg-gray-400' : 'bg-[#6B0A1D]'}`}

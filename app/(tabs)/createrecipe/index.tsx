@@ -120,11 +120,10 @@ export default function Index() {
           });
           setShowDuplicateModal(true);
           setIsChecking(false);
-          return; // Salimos aquí para mostrar el modal
+          return;
         }
       }
-
-      // Si no hay duplicado, continuar
+      
       updateDraft({
         title,
         description,

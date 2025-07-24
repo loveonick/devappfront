@@ -2,19 +2,23 @@ import { View, Text, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 
 export default function PublicadoScreen() {
-  const { replaced } = useLocalSearchParams();
-  const { id } = useLocalSearchParams();
+  const { replaced , pending  } = useLocalSearchParams();
   const isReplacement = replaced === 'true';
+  const isPending = pending === 'true';
 
   return (
     <View className="flex-1 bg-white justify-center items-center px-6">
       <Text className="text-2xl font-bold text-center mb-4">
-        {isReplacement
+        {isPending
+          ? '¡Receta enviada para revisión!'
+          : isReplacement
           ? '¡Receta reemplazada correctamente!'
           : '¡Receta creada correctamente!'}
       </Text>
       <Text className="text-base text-center mb-8">
-        {isReplacement
+        {isPending
+          ? 'Un administrador revisará tu receta antes de que sea publicada.'
+          : isReplacement
           ? 'La receta anterior fue eliminada y esta nueva ya está publicada.'
           : 'Ahora puedes verla en tu lista de recetas.'}
       </Text>
