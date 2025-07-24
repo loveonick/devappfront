@@ -29,7 +29,7 @@ export default function SavedRecipes() {
         console.error('Error al cargar recetas guardadas:', error);
         Alert.alert('Error', 'No se pudieron cargar las recetas guardadas.');
       } finally {
-        setLoading(false);
+        setLoading(false);  
       }
     };
 
