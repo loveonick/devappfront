@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, ActivityIndicator, TextInput, Pressable, Alert, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ScrollView, ActivityIndicator, TextInput, Pressable, Alert, Modal, TouchableOpacity, TouchableWithoutFeedback, KeyboardAvoidingView, SafeAreaView, Platform, Keyboard } from 'react-native';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -42,6 +42,8 @@ export default function RecipeDetail() {
   const [userComments, setUserComments] = useState<Comment[]>([]);
   const [portions, setPortions] = useState(2);
   const [modalVisible, setModalVisible] = useState(false); // Modal para "ya comentaste"
+  const [submitted, setSubmitted] = useState(false);
+
   console.log(userComments);
 
   const calculateIngredients = () => {
@@ -89,6 +91,7 @@ export default function RecipeDetail() {
 
       setComment('');
       setRatingUser(0);
+      setSubmitted(true);
     } catch (err) {
       console.error('Error al enviar comentario:', err);
       Alert.alert('Error', 'No se pudo enviar el comentario.');
@@ -210,6 +213,7 @@ export default function RecipeDetail() {
 
   return (
     <>
+    {/* Modal de advertencia */}
     <Modal
       transparent
       visible={modalVisible}
@@ -229,116 +233,132 @@ export default function RecipeDetail() {
         </View>
       </View>
     </Modal>
-      
-    <ScrollView className="flex-1 bg-white">
-      {/* Imagen principal */}
-     <View className="w-full h-72 justify-center items-center bg-white">
-        {recipe.imageUri ? (
-          <Image source={{ uri: recipe.imageUri }} style={{ width: '90%', height: '90%', resizeMode: 'contain' }}/>
-        ) : (
-          <View className="w-full h-full bg-gray-100 justify-center items-center">
-            <Icon name="image-outline" size={50} color="#9D5C63" />
-            <Text className="text-gray-500 mt-2">No hay imagen disponible</Text>
-          </View>
-        )}
-      </View>
 
-      <View className="p-5">
-        <Text className="text-3xl font-bold text-gray-800 mb-2">{recipe.title}</Text>
-        <Text className="text-gray-600 mb-5">{recipe.description}</Text>
-
-        <View className="bg-[#FEF5EF] p-4 rounded-xl mb-6">
-          <Text className="font-bold text-lg text-center text-gray-700 mb-2">Calificación general</Text>
-          <View className="items-center">
-            <SimpleStarRating rating={Math.round(averageRating)} />
-            <Text className="mt-2 text-gray-600">
-              {averageRating.toFixed(1)} / 5 ({userComments.length} opiniones)
-            </Text>
-          </View>
-        </View>
-
-        <View className="mb-6">
-          <Text className="text-lg font-bold text-gray-800 mb-2">Porciones</Text>
-          <View className="flex-row items-center bg-[#FEF5EF] p-3 rounded-lg">
-            <Pressable onPress={() => setPortions((prev) => Math.max(1, prev - 1))} className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center">
-              <Icon name="remove" size={20} color="white" />
-            </Pressable>
-            <Text className="mx-4 text-lg font-semibold">{portions}</Text>
-            <Pressable onPress={() => setPortions((prev) => Math.min(10, prev + 1))} className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center">
-              <Icon name="add" size={20} color="white" />
-            </Pressable>
-          </View>
-        </View>
-
-        <View className="mb-8">
-          <Text className="text-xl font-bold text-gray-800 mb-3">Ingredientes</Text>
-          <View className="bg-[#FEF5EF] p-4 rounded-lg">
-            {ingredientsToDisplay.map((ing, index) => (
-              <View key={index} className="flex-row py-2 border-b border-[#F0B27A] last:border-b-0">
-                <Text className="text-gray-700 flex-1">• {ing.name}</Text>
-                <Text className="text-gray-700 font-medium">
-                  {ing.quantity} {ing.unit}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View className="mb-8">
-          <Text className="text-xl font-bold text-gray-800 mb-3">Preparación</Text>
-          {recipe.steps?.map((step, index) => (
-            <View key={index} className="mb-5 bg-[#FEF5EF] p-4 rounded-lg">
-              <Text className="font-bold text-[#9D5C63] mb-2">Paso {index + 1}</Text>
-              <Text className="text-gray-700 mb-3">{step.description}</Text>
-              {step.imageUri && (
-                  <Image source={{ uri: step.imageUri }} style={{ width: '30%', aspectRatio: 4 / 3 }} resizeMode="contain"/>
+    <SafeAreaView className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        behavior="padding"
+        className="flex-1"
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView className="flex-1">
+            {/* Imagen principal */}
+          <View className="w-full h-72 justify-center items-center bg-white">
+              {recipe.imageUri ? (
+                <Image source={{ uri: recipe.imageUri }} style={{ width: '90%', height: '90%', resizeMode: 'contain' }}/>
+              ) : (
+                <View className="w-full h-full bg-gray-100 justify-center items-center">
+                  <Icon name="image-outline" size={50} color="#9D5C63" />
+                  <Text className="text-gray-500 mt-2">No hay imagen disponible</Text>
+                </View>
               )}
             </View>
 
-          ))}
-        </View>
-        {/* Comentarios */}
-        <View>
-          <Text className="text-xl font-bold text-gray-800 mb-3">Deja tu comentario</Text>
+            <View className="p-5">
+              <Text className="text-3xl font-bold text-gray-800 mb-2">{recipe.title}</Text>
+              <Text className="text-gray-600 mb-5">{recipe.description}</Text>
 
-          <TextInput
-            className="border-[#F0B27A] border-2 p-3 rounded-lg text-gray-700"
-            placeholder="Escribe tu comentario..."
-            placeholderTextColor="#9D5C63"
-            value={comment}
-            onChangeText={setComment}
-            multiline
-          />
-
-          <View className="bg-[#FEF5EF] p-4 rounded-lg my-4 items-center">
-            <Text className="font-semibold text-center text-gray-700 mb-2">Tu calificación</Text>
-            <SimpleStarRating rating={ratingUser} onChange={setRatingUser} />
-          </View>
-
-          <Pressable
-            onPress={handleCommentSubmit}
-            className="bg-[#9D5C63] rounded-lg px-6 py-3 items-center mt-2 mb-8"
-          >
-            <Text className="text-white font-bold text-lg">Publicar comentario</Text>
-          </Pressable>
-
-          {/* Lista de comentarios */}
-          <Text className="text-xl font-bold text-gray-800 mb-3">Comentarios</Text>
-
-          {userComments.length > 0 ? (
-            userComments.map((c, idx) => (
-              <View key={idx} className="bg-[#FEF5EF] p-4 rounded-lg mb-4">
-                <Text className="font-bold text-gray-800">{c.name}</Text>
-                <Text className="text-gray-700 my-2">{c.text}</Text>
-                <SimpleStarRating rating={c.stars} />
+              <View className="bg-[#FEF5EF] p-4 rounded-xl mb-6">
+                <Text className="font-bold text-lg text-center text-gray-700 mb-2">Calificación general</Text>
+                <View className="items-center">
+                  <SimpleStarRating rating={Math.round(averageRating)} />
+                  <Text className="mt-2 text-gray-600">
+                    {averageRating.toFixed(1)} / 5 ({userComments.length} opiniones)
+                  </Text>
+                </View>
               </View>
-            ))
-          ) : (
-            <Text className="text-gray-500 text-center py-4">No hay comentarios aún</Text>
-          )}
-        </View>
-      </View>
-    </ScrollView>
+
+              <View className="mb-6">
+                <Text className="text-lg font-bold text-gray-800 mb-2">Porciones</Text>
+                <View className="flex-row items-center bg-[#FEF5EF] p-3 rounded-lg">
+                  <Pressable onPress={() => setPortions((prev) => Math.max(1, prev - 1))} className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center">
+                    <Icon name="remove" size={20} color="white" />
+                  </Pressable>
+                  <Text className="mx-4 text-lg font-semibold">{portions}</Text>
+                  <Pressable onPress={() => setPortions((prev) => Math.min(10, prev + 1))} className="bg-[#9D5C63] rounded-full w-8 h-8 justify-center items-center">
+                    <Icon name="add" size={20} color="white" />
+                  </Pressable>
+                </View>
+              </View>
+
+              <View className="mb-8">
+                <Text className="text-xl font-bold text-gray-800 mb-3">Ingredientes</Text>
+                <View className="bg-[#FEF5EF] p-4 rounded-lg">
+                  {ingredientsToDisplay.map((ing, index) => (
+                    <View key={index} className="flex-row py-2 border-b border-[#F0B27A] last:border-b-0">
+                      <Text className="text-gray-700 flex-1">• {ing.name}</Text>
+                      <Text className="text-gray-700 font-medium">
+                        {ing.quantity} {ing.unit}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              <View className="mb-8">
+                <Text className="text-xl font-bold text-gray-800 mb-3">Preparación</Text>
+                {recipe.steps?.map((step, index) => (
+                  <View key={index} className="mb-5 bg-[#FEF5EF] p-4 rounded-lg">
+                    <Text className="font-bold text-[#9D5C63] mb-2">Paso {index + 1}</Text>
+                    <Text className="text-gray-700 mb-3">{step.description}</Text>
+                    {step.imageUri && (
+                        <Image source={{ uri: step.imageUri }} style={{ width: '30%', aspectRatio: 4 / 3 }} resizeMode="contain"/>
+                    )}
+                  </View>
+
+                ))}
+              </View>
+              {/* Comentarios */}
+              <View>
+                <Text className="text-xl font-bold text-gray-800 mb-3">Deja tu comentario</Text>
+
+                <TextInput
+                  className="border-[#F0B27A] border-2 p-3 rounded-lg text-gray-700"
+                  placeholder="Escribe tu comentario..."
+                  placeholderTextColor="#9D5C63"
+                  value={comment}
+                  onChangeText={setComment}
+                  multiline
+                />
+
+                <View className="bg-[#FEF5EF] p-4 rounded-lg my-4 items-center">
+                  <Text className="font-semibold text-center text-gray-700 mb-2">Tu calificación</Text>
+                  <SimpleStarRating rating={ratingUser} onChange={setRatingUser} />
+                </View>
+
+                <Pressable
+                  onPress={handleCommentSubmit}
+                  className="bg-[#9D5C63] rounded-lg px-6 py-3 items-center mt-2 mb-8"
+                >
+                  <Text className="text-white font-bold text-lg">Publicar comentario</Text>
+                </Pressable>
+
+                {submitted && (
+                  <Text className="text-green-600 mt-4 text-center">
+                    Tu reseña fue enviada y está pendiente de aprobación.
+                  </Text>
+                )}
+
+                {/* Lista de comentarios */}
+                <Text className="text-xl font-bold text-gray-800 mb-3">Comentarios</Text>
+
+                {userComments.length > 0 ? (
+                  userComments.map((c, idx) => (
+                    <View key={idx} className="bg-[#FEF5EF] p-4 rounded-lg mb-4">
+                      <Text className="font-bold text-gray-800">{c.name}</Text>
+                      <Text className="text-gray-700 my-2">{c.text}</Text>
+                      <SimpleStarRating rating={c.stars} />
+                    </View>
+                  ))
+                ) : (
+                  <Text className="text-gray-500 text-center py-4">No hay comentarios aún</Text>
+                )}
+              </View>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
     </>
   );
 }

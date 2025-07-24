@@ -76,16 +76,13 @@ export default function Ingredients() {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={{ position: 'absolute', top: 48, left: 24, zIndex: 10 }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#9D5C63" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+            <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
+              <Ionicons name="arrow-back" size={24} color="#9D5C63" />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Ingredientes</Text>
+          </View>
 
-          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' }}>
-            Ingredientes
-          </Text>
 
           {ingredients.map((item, index) => (
             <View key={index} style={{ flexDirection: 'row', marginBottom: 12 }}>

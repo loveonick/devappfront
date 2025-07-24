@@ -131,7 +131,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const updateUser = async (newData: { username: string; email: string; image?: string | null }) => {
+  const updateUser = async (newData: { username: string; email: string; image?: string | null; }) => {
     if (!user) return;
     try {
       const updatedUser = await updateUserProfile(user._id, newData);
@@ -141,6 +141,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: updatedUser.email,
         image: updatedUser.image,
         favorites: updatedUser.favorites,
+        role: updatedUser.role || 'user',
       };
       setUser(mappedUser);
       await AsyncStorage.setItem('user', JSON.stringify(mappedUser));

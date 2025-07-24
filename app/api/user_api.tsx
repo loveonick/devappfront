@@ -71,5 +71,6 @@ export const updateUserProfile = async (
     email: updatedUser.user.email,
     image: updatedUser.user.imgUrl,
     favorites: updatedUser.user.favorites,
+    role: updatedUser.user.role || 'user',
   };
 };
