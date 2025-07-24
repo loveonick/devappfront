@@ -1,5 +1,15 @@
-import { FlatList, Image, Text, TouchableOpacity, View, ScrollView, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import {
+  FlatList,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import React, { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { useRecipeContext } from '../context/RecipeContext';
@@ -10,7 +20,6 @@ import { getApprovedRecipes } from '../api/recipe_api';
 import RecipeCard from '../../components/RecipeCard';
 import RecipeWeek from '../../components/RecipeWeek';
 import Tags from '../../components/Tags';
-import { sanitizeRecipe } from '../../utils/sanitizeRecipe';
 
 const dishTypes = [
   'Todos',
@@ -22,7 +31,7 @@ const dishTypes = [
   'Ensalada',
   'Sopa',
   'Snack',
-  'Desayuno'
+  'Desayuno',
 ];
 
 const Index = () => {
@@ -41,7 +50,7 @@ const Index = () => {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
-
+console.log('Recipes', recipes);
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -79,35 +88,11 @@ const Index = () => {
     }, [])
   );
 
-  const filteredRecipes = recipes.filter(r =>
-    selectedDishType === 'Todos' || (r.tags && r.tags.includes(selectedDishType))
+  const filteredRecipes = recipes.filter(
+    (r) =>
+      selectedDishType === 'Todos' ||
+      (r.tags && r.tags.includes(selectedDishType))
   );
-
-const handleSaveRecipe = async (recipe: any) => {
-  if (!user || !user._id) {
-    Alert.alert('Error', 'No se pudo identificar al usuario.');
-    return;
-  }
-
-  if (alreadySaved(recipe)) {
-    Alert.alert('Ya guardada', 'Esta receta ya fue guardada para ver sin conexión.');
-    return;
-  }
-
-  if (storedRecipes.length >= 10) {
-    Alert.alert('Límite alcanzado', 'Solo puedes guardar hasta 10 recetas.');
-    return;
-  }
-
-  const preparedRecipe = sanitizeRecipe({
-    ...recipe,
-    author: recipe.author ?? user.username,
-    date: recipe.date ?? new Date().toISOString(),
-  });
-
-  await addRecipe(preparedRecipe);
-  Alert.alert('Receta guardada', 'La receta se guardó correctamente.');
-};
 
   if (loading) {
     return (
@@ -123,7 +108,9 @@ const handleSaveRecipe = async (recipe: any) => {
       <SafeAreaView className="flex-1 bg-colorfondo">
         <View className="px-4 pt-10 items-center">
           <Icon name="cloud-offline-outline" size={80} color="#6B0A1D" />
-          <Text className="text-xl font-bold text-center mt-4">Sin conexión a Internet</Text>
+          <Text className="text-xl font-bold text-center mt-4">
+            Sin conexión a Internet
+          </Text>
           <Text className="text-gray-600 text-center mt-2 mb-4">
             Mostrando recetas guardadas localmente
           </Text>
@@ -131,7 +118,7 @@ const handleSaveRecipe = async (recipe: any) => {
 
         <FlatList
           data={storedRecipes}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16 }}
           renderItem={({ item }) => (
             <View className="mb-4">
@@ -142,7 +129,9 @@ const handleSaveRecipe = async (recipe: any) => {
                 description={item.description}
                 tags={item.tags}
                 author={item.author}
-                date={item.date?.toString() || ''}
+                date={item.date.toString()}
+                isSaved={alreadySaved(item)}
+                
               />
               <TouchableOpacity
                 onPress={() => deleteRecipe(item.id)}
@@ -173,7 +162,11 @@ const handleSaveRecipe = async (recipe: any) => {
     <SafeAreaView className="h-full bg-colorfondo">
       <View className="flex-1 mt-7 bg-white">
         <View className="flex-row items-center justify-between px-4 bg-colorfondo">
-          <Image source={require('../../assets/logo.png')} style={{ width: 70, height: 70 }} resizeMode="contain" />
+          <Image
+            source={require('../../assets/logo.png')}
+            style={{ width: 70, height: 70 }}
+            resizeMode="contain"
+          />
 
           <View className="flex-1 ml-4">
             <TouchableOpacity
@@ -191,16 +184,24 @@ const handleSaveRecipe = async (recipe: any) => {
 
         <FlatList
           data={filteredRecipes}
-          keyExtractor={item => item.id.toString()}
-          contentContainerStyle={{ paddingBottom: 130, paddingHorizontal: 16, flexGrow: 1 }}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{
+            paddingBottom: 130,
+            paddingHorizontal: 16,
+            flexGrow: 1,
+          }}
           ListHeaderComponent={
             <>
               <Text className="text-xl font-bold mb-2 mt-4">Recetas recientes</Text>
               {recipes.length === 0 ? (
                 <Text className="text-gray-500 mb-4">No hay recetas para mostrar</Text>
               ) : (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 space-x-2">
-                  {recipes.slice(0, 3).map(recipe => (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className="mb-4 space-x-2"
+                >
+                  {recipes.slice(0, 3).map((recipe) => (
                     <RecipeWeek
                       key={recipe.id}
                       imgsrc={{ uri: recipe.imageUri }}
@@ -216,45 +217,29 @@ const handleSaveRecipe = async (recipe: any) => {
               />
             </>
           }
-          renderItem={({ item }) => {
-            const isSaved = alreadySaved(item);
-
-            return (
-              <View className="mb-4">
-                <TouchableOpacity
-                  onPress={() =>
-                    router.push({
-                      pathname: '/recipes/[id]',
-                      params: { id: item.id },
-                    })
-                  }
-                  activeOpacity={0.8}
-                >
-                  <RecipeCard
-                    recipeId={item.id}
-                    imgsrc={{ uri: item.imageUri }}
-                    title={item.title}
-                    description={item.description}
-                    tags={item.tags}
-                    author={item.author}
-                    date={item.date.toString()}
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    if (!isSaved) handleSaveRecipe(item);
-                  }}
-                  disabled={isSaved}
-                  className={`mt-2 rounded-lg px-4 py-2 self-start ${isSaved ? 'bg-gray-400' : 'bg-[#6B0A1D]'}`}
-                >
-                  <Text className="text-white font-semibold">
-                    {isSaved ? 'Ya guardada' : 'Guardar offline'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            );
-          }}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/recipes/[id]',
+                  params: { id: item.id },
+                })
+              }
+              activeOpacity={0.8}
+            >
+              <RecipeCard
+                recipeId={item.id}
+                imgsrc={{ uri: item.imageUri }}
+                title={item.title}
+                description={item.description}
+                tags={item.tags}
+                author={item.author}
+                date={item.date.toString()}
+                isSaved={alreadySaved(item)}
+                
+              />
+            </TouchableOpacity>
+          )}
         />
       </View>
     </SafeAreaView>

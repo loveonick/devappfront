@@ -66,9 +66,7 @@ const ProfileScreen = () => {
     setShowLogoutMessage(false);
   };
 
-  const handleRemoveOfflineRecipe = (recipeId: string) => {
-    deleteRecipe(recipeId);
-  };
+  
 
   useFocusEffect(
     useCallback(() => {
@@ -120,7 +118,7 @@ const ProfileScreen = () => {
             <Text className="text-white font-semibold">Editar perfil</Text>
           </TouchableOpacity>
           {user?.role === 'admin' && (
-            <TouchableOpacity className="bg-green-700 px-4 py-2 rounded-md" onPress={() => router.push('/adminboard')}>
+            <TouchableOpacity className="bg-green-800 px-4 py-2 rounded-md" onPress={() => router.push('/adminboard')}>
               <Text className="text-white font-semibold">Panel Admin</Text>
             </TouchableOpacity>
           )}
@@ -174,22 +172,17 @@ const ProfileScreen = () => {
                   tags={item.tags}
                   author={item.author}
                   date={item.date?.toString() || ''}
+                  isSaved={activeTab === 'sin-conexion'}
+                  
                 />
               </TouchableOpacity>
-              {activeTab === 'sin-conexion' && (
-                <TouchableOpacity
-                  onPress={() => handleRemoveOfflineRecipe(item.id)}
-                  className="bg-red-500 mt-2 rounded-md px-4 py-2 self-start"
-                >
-                  <Text className="text-white font-medium">Eliminar receta</Text>
-                </TouchableOpacity>
-              )}
+              
             </View>
           ))
         )}
 
         {activeTab === 'sin-conexion' && storedRecipes.length > 0 && (
-          <TouchableOpacity onPress={deleteAllRecipes} className="bg-red-700 mt-6 mx-4 rounded-lg px-4 py-3">
+          <TouchableOpacity onPress={deleteAllRecipes} className="bg-red-900 mt-6 mx-4 rounded-lg px-4 py-3">
             <Text className="text-white text-center font-bold">Eliminar todas las recetas guardadas offline</Text>
           </TouchableOpacity>
         )}
