@@ -4,7 +4,6 @@ import { addIngredient } from '../app/api/ingredient_api';
 import { addProcedure } from '../app/api/procedure_api';
 
 export const handleUpload = async (draft: any, steps: any[], user: any) => {
-    console.log('handleUpload', { draft, steps, user });
     const formData = new FormData();
     const ingredientIds: string[] = [];
     const procedureIds: string[] = [];
@@ -62,6 +61,5 @@ export const handleUpload = async (draft: any, steps: any[], user: any) => {
         console.warn('No se pudo eliminar receta duplicada:', err);
         }
     }
-
     return data.recipe;
 };

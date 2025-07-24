@@ -25,6 +25,9 @@ export default function NewProcedureScreen() {
   const [steps, setSteps] = useState<RecipeStep[]>(draft.steps ?? [{ description: '' }]);
   const [currentStep, setCurrentStep] = useState(1);
   const [showConfirmUpload, setShowConfirmUpload] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -58,15 +61,16 @@ export default function NewProcedureScreen() {
 
   const handleNextStep = () => {
     if (!steps[currentStep - 1]?.description) {
-      alert('Agrega una descripción para este paso');
+      setErrorMessage('Agrega una descripción para este paso');
       return;
     }
+    setErrorMessage('');
     setCurrentStep(prev => prev + 1);
-  };
+    };
 
   const handleFinish = async () => {
     if (!steps[currentStep - 1]?.description) {
-      alert('Completa el paso actual antes de finalizar');
+      setErrorMessage('Completa el paso actual antes de finalizar');
       return;
     }
 
@@ -74,7 +78,7 @@ export default function NewProcedureScreen() {
       const networkState = await Network.getNetworkStateAsync();
 
       if (!networkState.isConnected) {
-        alert('No hay conexión. La receta se guardará y se subirá automáticamente cuando tengas WiFi.');
+        setErrorMessage('No hay conexión. La receta se guardará localmente.');
         await addPendingRecipe(draft, steps);
         router.push('/');
         return;
@@ -89,11 +93,13 @@ export default function NewProcedureScreen() {
 
     } catch (error) {
       console.error('Error al verificar red:', error);
-      alert('Error al verificar el estado de red.');
+      setErrorMessage('Error al verificar el estado de red.');
     }
   };
 
   const proceedToUpload = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
     try {
       const data = await handleUpload(draft, steps, user);
 
@@ -102,25 +108,26 @@ export default function NewProcedureScreen() {
       router.push({
         pathname: '/createrecipe/released',
         params: {
-          id: data.recipe._id,
+          id: data._id,
           replaced: draft.duplicateId ? 'true' : 'false',
-          pending: 'true'
-        }
+          pending: 'true',
+        },
       });
     } catch (error: any) {
       console.error('Error al subir la receta:', error);
-
-      // ⚠️ Solo mostrar el mensaje si es realmente crítico
       const message = error?.message ?? '';
       const esErrorCritico = message.includes('crear') || message.includes('subir la imagen');
 
       if (esErrorCritico) {
-        Alert.alert('Error', message || 'No se pudo subir la receta.');
+        setErrorMessage(message || 'No se pudo subir la receta.');
       } else {
         console.warn('Error menor durante subida, pero se completó en el back.');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (steps.length < currentStep) {
@@ -143,6 +150,7 @@ export default function NewProcedureScreen() {
         className="bg-gray-100 rounded-md h-32 px-4 py-2 mb-4"
         multiline
         placeholder="Describe este paso..."
+        placeholderTextColor={'#9CA3AF'}
         value={steps[currentStep - 1]?.description || ''}
         onChangeText={(text) => {
           const newSteps = [...steps];
@@ -185,6 +193,9 @@ export default function NewProcedureScreen() {
         >
           <Text className="text-white font-bold">Finalizar</Text>
         </Pressable>
+        {errorMessage !== '' && (
+          <Text className="text-red-500 text-center mt-4">{errorMessage}</Text>
+        )}
       </View>
 
       {showConfirmUpload && (
@@ -220,6 +231,14 @@ export default function NewProcedureScreen() {
                 <Text className="text-white font-medium">Subir ahora</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      )}
+      {isLoading && (
+        <View className="absolute inset-0 bg-black/50 justify-center items-center z-30">
+          <View className="bg-white px-6 py-4 rounded-xl shadow">
+            <Text className="text-center font-semibold mb-2 text-gray-700">Subiendo receta...</Text>
+            <Ionicons name="cloud-upload" size={32} color="#9D5C63" />
           </View>
         </View>
       )}
